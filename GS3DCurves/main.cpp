@@ -6,10 +6,14 @@
 #include <cstdlib>
 #include <random>
 
-#include "shader.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+
+#include "shader.h"
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -32,6 +36,9 @@ float fov = 45.0f;
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+float deltaTimeFrame = .0f;
+float lastFrame = .0f;
+
 struct Node {
     int config;
     glm::vec3 pos;
@@ -44,6 +51,81 @@ struct Curve {
 
 
 };
+
+glm::vec3 getDispNodeX(int config) {
+    switch (config)
+    {
+    case 0:
+        return glm::vec3(0.0f,1.0f,1.0f);
+    case 1:
+        return glm::vec3(0.0f, -1.0f, 1.0f);
+    case 2:
+        return glm::vec3(0.0f, 1.0f, -1.0f);
+    case 3:
+        return glm::vec3(0.0f, -1.0f, -1.0f);
+    default:
+        return glm::vec3(-1.0f, -1.0f, 0.0f);
+    }
+}
+
+glm::vec3 getDispNodeY(int config) {
+    switch (config)
+    {
+    case 0:
+        return glm::vec3(1.0f, 0.0f, 1.0f);
+    case 1:
+        return glm::vec3(-1.0f, 0.0f, 1.0f);
+    case 2:
+        return glm::vec3(1.0f, 0.0f, -1.0f);
+    case 3:
+        return glm::vec3(-1.0f, 0.0f, -1.0f);
+    default:
+        return glm::vec3(-1.0f, -1.0f, 0.0f);
+    }
+}
+
+glm::vec3 getDispNodeZ(int config) {
+    switch (config)
+    {
+    case 0:
+        return glm::vec3(1.0f, 1.0f, 0.0f);
+    case 1:
+        return glm::vec3(-1.0f, 1.0f, 0.0f);
+    case 2:
+        return glm::vec3(1.0f, -1.0f, 0.0f);
+    case 3:
+        return glm::vec3(-1.0f, -1.0f, 0.0f);
+    default:
+        return glm::vec3(-1.0f, -1.0f, 0.0f);
+    }
+}
+
+
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    float camSpeed = static_cast<float>(sensitivity * deltaTimeFrame);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camPos += camSpeed * camFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camPos -= camSpeed * camFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camPos -= camSpeed * glm::normalize(glm::cross(camFront, camUp));
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camPos += camSpeed * glm::normalize(glm::cross(camFront, camUp));
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camPos += camSpeed * camUp;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camPos -= camSpeed * camUp;
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
 
 int main() {
     //set glfw
@@ -59,18 +141,22 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         printf("Failed to init GLAD");
         return -1;
     }
 
-    int row = 5;
-    int col = 5;
-    int dep = 5;
-    int space = 2;
+    int row = 3;
+    int col = 3;
+    int dep = 3;
+    float space = 4.0f;
     int len = row * col * dep;
     Node*** allNodes;
     allNodes = new Node * *[row];
@@ -82,34 +168,157 @@ int main() {
     // end points within cells are distanced as space/2
     // end points between cells are distanced as space/2
     // do not have offset for now
+    
     for (int i = 0; i < row; i++) {
         allNodes[i] = new Node * [col];
         for (int j = 0; j < col; j++) {
             allNodes[i][j] = new Node[dep];
             for (int k = 0; k < dep; k++) {
-                allNodes[i][j][k].config = std::rand() % 8;
-                allNodes[i][j][k].pos = glm::vec3(i*space,j*space,k*space);
-                allNodes[i][j][k].e1[0] = glm::vec3(i * space - space/4, j * space, k * space);
-                allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space);
-                allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space);
-                allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space);
-                allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4);
-                allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4);
-            }
+                int config = std::rand() % 8;
+                allNodes[i][j][k].config = config;
+                //printf("config of (%i, %i, %i) is %i\n", i, j, k, config);
+                allNodes[i][j][k].pos = glm::vec3(i * space, j * space, k * space);
+                switch (config)
+                {
+                case 0:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(3) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(3) / 4.0f;
+                    break;
+                case 1:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(0) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(0) / 4.0f;
+                    break;
+                case 2:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(1) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(1) / 4.0f;
+                    break;
+                case 3:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(2) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(2) / 4.0f;
+                    break;
+                case 4:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(2) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(2) / 4.0f;
+                    break;
+                case 5:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(1) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(1) / 4.0f;
+                    break;
+                case 6:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(0) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(0) / 4.0f;
+                    break;
+                case 7:
+                    allNodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
+                    allNodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
+                    allNodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
+                    allNodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
+                    allNodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(3) / 4.0f;
+                    allNodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(3) / 4.0f;
+                    break;
+                
+                }
+                }
         }
     }
-
+    std::vector<glm::vec3> edgesx;
+    std::vector<glm::vec3> edgesy;
+    std::vector<glm::vec3> edgesz;
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             for (int k = 0; k < dep; k++) {
-                
+                if (i != 0) {
+                    edgesx.push_back(allNodes[i-1][j][k].e1[1]);
+                    edgesx.push_back(allNodes[i][j][k].e1[0]);
+                }
+                if (j != 0) {
+                    edgesy.push_back(allNodes[i][j - 1][k].e2[1]);
+                    edgesy.push_back(allNodes[i][j][k].e2[0]);
+                }
+                if (k != 0) {
+                    edgesz.push_back(allNodes[i][j][k - 1].e3[1]);
+                    edgesz.push_back(allNodes[i][j][k].e3[0]);
+                }
+                edgesx.push_back(allNodes[i][j][k].e1[0]);
+                edgesx.push_back(allNodes[i][j][k].e1[1]);
+                edgesy.push_back(allNodes[i][j][k].e2[0]);
+                edgesy.push_back(allNodes[i][j][k].e2[1]);
+                edgesz.push_back(allNodes[i][j][k].e3[0]);
+                edgesz.push_back(allNodes[i][j][k].e3[1]);
             }
         }
     }
+    edgesx.insert(edgesx.end(), edgesy.begin(), edgesy.end());
+    edgesx.insert(edgesx.end(), edgesz.begin(), edgesz.end());
+
+    //edgesx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+    //edgesx.push_back(glm::vec3(0.0f, 0.0f, 10.0f));
+
+    unsigned int vao, vbo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * edgesx.size(), &edgesx[0], GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    unsigned int VAO_plane;
+    glGenVertexArrays(1, &VAO_plane);
+
+    float planeVertices[] = {
+        10.0f,10.0f,0.0f,
+        -10.0f,10.0f,0.0f,
+        -10.0f,-10.0f,0.0f,
+        -10.0f,-10.0f,0.0f,
+        10.0f,-10.0f,0.0f,
+        10.0f,10.0f,0.0f
+    };
+
+    unsigned int VBO_pos_p;
+    glGenBuffers(1, &VBO_pos_p);
+
+    glBindVertexArray(VAO_plane);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_pos_p);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
     int width, height;
-    Shader shader = Shader("","");
-    /*
+    Shader shader = Shader("C:\\Src\\shaders\\linevertex.glsl","C:\\Src\\shaders\\linefrag.glsl");
+    
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -118,29 +327,44 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 330");
 
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    */
+    
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
+
+
     while (!glfwWindowShouldClose(window))
     {
         // input
         // -----
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTimeFrame = currentFrame - lastFrame;
+        lastFrame = currentFrame;
         processInput(window);
-
+        //printf("campos (%f,%f,%f)  ", camPos.x, camPos.y, camPos.z);
+        //printf("camfront (%f,%f,%f)\n", camFront.x, camFront.y, camFront.z);
         // render
         // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
         glm::mat4 view = glm::lookAt(camPos, camPos + camFront, camUp);
         shader.setMat4("view", view);
 
         glfwGetWindowSize(window, &width, &height);
-
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.01f, 100000.0f);
         
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.01f, 100000.0f);
+        shader.setMat4("projection", projection);
         glm::mat4 model = glm::mat4(1.0f);
         shader.setMat4("model", model);
-        
+        glBindVertexArray(vao);
+        glDrawArrays(GL_LINES, 0, edgesx.size());
+
+        //glBindVertexArray(VAO_plane);
+        //glDrawArrays(GL_TRIANGLES, 0, 6);
         //start of imgui init stuff
         //ImGui_ImplOpenGL3_NewFrame();
         //ImGui_ImplGlfw_NewFrame();
@@ -152,14 +376,9 @@ int main() {
         glfwPollEvents();
     }
     //stbi_image_free(data);
+    delete allNodes;
     glfwTerminate();
     return 0;
-}
-
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

@@ -133,10 +133,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\Include\glad\glad.c" />
+    <ClCompile Include="..\..\..\..\..\..\..\Include\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\Include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\Include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\Include\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\Include\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\Include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\Include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="C:\Include\glad\glad.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imconfig.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imgui.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

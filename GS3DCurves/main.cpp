@@ -317,7 +317,7 @@ int main() {
     glEnableVertexAttribArray(0);
 
     int width, height;
-    Shader shader = Shader("C:\\Src\\shaders\\linevertex.glsl","C:\\Src\\shaders\\linefrag.glsl");
+    Shader shader = Shader("C:\\Src\\shaders\\vert.glsl","C:\\Src\\shaders\\frag.glsl");
     
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -363,15 +363,15 @@ int main() {
         glBindVertexArray(vao);
         glDrawArrays(GL_LINES, 0, edgesx.size());
 
-        //glBindVertexArray(VAO_plane);
-        //glDrawArrays(GL_TRIANGLES, 0, 6);
         //start of imgui init stuff
-        //ImGui_ImplOpenGL3_NewFrame();
-        //ImGui_ImplGlfw_NewFrame();
-        //ImGui::NewFrame();
-
-        //ImGui::Render();
-        //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::Begin("Structure Settings");
+        //ImGui::DragFloat("");
+        ImGui::End();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

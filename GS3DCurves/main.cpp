@@ -143,6 +143,16 @@ void initStructure(Node***& nodes, int dims[3]) {
     }
 }
 
+void randomizeStructure(Node***& nodes, int dims[3], int config) {
+    for (int i = 0; i < dims[0]; i++) {
+        for (int j = 0; j < dims[1]; j++) {
+            for (int k = 0; k < dims[2]; k++) {
+                nodes[i][j][k].config = (std::rand() % 8) & config;
+            }
+        }
+    }
+}
+
 void randomizeStructure(Node***& nodes, int dims[3]) {
     for (int i = 0; i < dims[0]; i++) {
         for (int j = 0; j < dims[1]; j++) {
@@ -159,6 +169,50 @@ void updateStructure(Node***& nodes, int dims[3], float space) {
             for (int k = 0; k < dims[2]; k++) {
                 //printf("config of (%i, %i, %i) is %i\n", i, j, k, config);
                 nodes[i][j][k].pos = glm::vec3(i * space, j * space, k * space);
+                nodes[i][j][k].e1[0] = space * getDispNodeX(0) / 4.0f;
+                nodes[i][j][k].e1[1] = space * getDispNodeX(0) / 4.0f;
+                nodes[i][j][k].e2[0] = space * getDispNodeY(2) / 4.0f;
+                nodes[i][j][k].e2[1] = space * getDispNodeY(2) / 4.0f;
+                nodes[i][j][k].e3[0] = space * getDispNodeZ(3) / 4.0f;
+                nodes[i][j][k].e3[1] = space * getDispNodeZ(3) / 4.0f;
+
+                if (nodes[i][j][k].config & (1 << 0)) {
+                    //printf("mirror about origin\n");
+                    nodes[i][j][k].e1[0] *= -1.0f;
+                    nodes[i][j][k].e1[1] *= -1.0f;
+                    nodes[i][j][k].e2[0] *= -1.0f;
+                    nodes[i][j][k].e2[1] *= -1.0f;
+                    nodes[i][j][k].e3[0] *= -1.0f;
+                    nodes[i][j][k].e3[1] *= -1.0f;
+                }
+
+                if (nodes[i][j][k].config & (1 << 1)) {
+                    //printf("mirror about yz\n");
+                    nodes[i][j][k].e1[0].x *= -1.0f;
+                    nodes[i][j][k].e1[1].x *= -1.0f;
+                    nodes[i][j][k].e2[0].x *= -1.0f;
+                    nodes[i][j][k].e2[1].x *= -1.0f;
+                    nodes[i][j][k].e3[0].x *= -1.0f;
+                    nodes[i][j][k].e3[1].x *= -1.0f;
+                }
+
+                if (nodes[i][j][k].config & (1 << 2)) {
+                    //printf("mirror about xz\n");
+                    nodes[i][j][k].e1[0].y *= -1.0f;
+                    nodes[i][j][k].e1[1].y *= -1.0f;
+                    nodes[i][j][k].e2[0].y *= -1.0f;
+                    nodes[i][j][k].e2[1].y *= -1.0f;
+                    nodes[i][j][k].e3[0].y *= -1.0f;
+                    nodes[i][j][k].e3[1].y *= -1.0f;
+                }
+
+                nodes[i][j][k].e1[0] += glm::vec3(i * space - space / 4, j * space, k * space);
+                nodes[i][j][k].e1[1] += glm::vec3(i * space + space / 4, j * space, k * space);
+                nodes[i][j][k].e2[0] += glm::vec3(i * space, j * space - space / 4, k * space);
+                nodes[i][j][k].e2[1] += glm::vec3(i * space, j * space + space / 4, k * space);
+                nodes[i][j][k].e3[0] += glm::vec3(i * space, j * space, k * space - space / 4);
+                nodes[i][j][k].e3[1] += glm::vec3(i * space, j * space, k * space + space / 4);
+                /*
                 switch (nodes[i][j][k].config)
                 {
                 case 0:
@@ -227,6 +281,7 @@ void updateStructure(Node***& nodes, int dims[3], float space) {
                     break;
 
                 }
+                */
             }
         }
     }
@@ -241,6 +296,14 @@ void generateRandomStructure(Node***& nodes, int dims[3], float space) {
     updateStructure(nodes, dims, space);
 }
 
+void generateRandomStructure(Node***& nodes, int dims[3], float space, int config) {
+    if (nodes != nullptr) {
+        deleteStructure(nodes, dims);
+    }
+    initStructure(nodes, dims);
+    randomizeStructure(nodes, dims, config);
+    updateStructure(nodes, dims, space);
+}
 
 void generateStructureData(Node***& nodes, int dims[3], std::vector<glm::vec3>& v, std::vector<glm::vec3>& c) {
     v.clear();
@@ -393,6 +456,8 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     float radius = 1.0f;
     glm::vec3 lightPos = { 10.0f,10.f,10.f };
+    bool xyz = true, xz = true, yz = true;
+    int config = 7;
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     //ImGui::SetNextWindowPos(viewport->Pos);
     //ImGui::SetNextWindowSize(viewport->Size);
@@ -433,8 +498,8 @@ int main() {
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport(viewport, dockspace_flags);
         ImGui::Begin("Structure Settings");
-        if (ImGui::DragInt3("Dimension", dims, 1.0f, 2, 100)) {
-            generateRandomStructure(allNodes, dims, space);
+        if (ImGui::DragInt3("Dimension", dims, .2f, 2, 100)) {
+            generateRandomStructure(allNodes, dims, space, config);
             generateStructureData(allNodes, dims, v, c);
             glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
             glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
@@ -443,6 +508,33 @@ int main() {
         }
         if (ImGui::DragFloat("Space", &space)) {
             updateStructure(allNodes, dims, space);
+            generateStructureData(allNodes, dims, v, c);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+        }
+        if (ImGui::Checkbox("Enable XYZ Mirror", &xyz)) {
+            config = xyz * 1 + xz * 2 + yz * 4;
+            generateRandomStructure(allNodes, dims, space, config);
+            generateStructureData(allNodes, dims, v, c);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+        }
+        if (ImGui::Checkbox("Enable XZ Mirror", &xz) ) {
+            config = xyz * 1 + xz * 2 + yz * 4;
+            generateRandomStructure(allNodes, dims, space, config);
+            generateStructureData(allNodes, dims, v, c);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+        }
+        if (ImGui::Checkbox("Enable YZ Mirror", &yz)) {
+            config = xyz * 1 + xz * 2 + yz * 4;
+            generateRandomStructure(allNodes, dims, space, config);
             generateStructureData(allNodes, dims, v, c);
             glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
             glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);

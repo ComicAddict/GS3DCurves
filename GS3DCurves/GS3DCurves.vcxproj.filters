@@ -16,6 +16,9 @@
     <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{a882a13c-ff6f-4c71-97a2-3a489724eead}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\shader">
+      <UniqueIdentifier>{115bd855-45b1-47df-8844-20de54faae6f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -77,5 +80,22 @@
     <ClInclude Include="..\..\..\..\..\..\..\Include\imgui\imstb_rectpack.h">
       <Filter>Source Files\imgui</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\..\..\Src\shaders\linevertex.glsl">
+      <Filter>Source Files\shader</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\..\Src\shaders\vertex.glsl">
+      <Filter>Source Files\shader</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\..\Src\shaders\cylinder.glsl">
+      <Filter>Source Files\shader</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\..\Src\shaders\frag.glsl">
+      <Filter>Source Files\shader</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\..\Src\shaders\linefrag.glsl">
+      <Filter>Source Files\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

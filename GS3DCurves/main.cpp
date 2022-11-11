@@ -47,11 +47,6 @@ struct Node {
     glm::vec3 e3[2];
 };
 
-struct Curve {
-
-
-};
-
 glm::vec3 getDispNodeX(int config) {
     switch (config)
     {

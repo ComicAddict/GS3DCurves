@@ -377,18 +377,27 @@ int main() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 0.0f;
+    style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
     float radius = 1.0f;
-
+    glm::vec3 lightPos = { 10.0f,10.f,10.f };
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    //ImGui::SetNextWindowPos(viewport->Pos);
+    //ImGui::SetNextWindowSize(viewport->Size);
+    //ImGui::SetNextWindowViewport(viewport->ID);
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
     while (!glfwWindowShouldClose(window))
     {
         // input
@@ -397,8 +406,7 @@ int main() {
         deltaTimeFrame = currentFrame - lastFrame;
         lastFrame = currentFrame;
         processInput(window);
-        //printf("campos (%f,%f,%f)  ", camPos.x, camPos.y, camPos.z);
-        //printf("camfront (%f,%f,%f)\n", camFront.x, camFront.y, camFront.z);
+
         // render
         // ------
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -415,6 +423,7 @@ int main() {
         glm::mat4 model = glm::mat4(1.0f);
         shader.setMat4("model", model);
         shader.setFloat("rad", radius);
+        shader.setVec3("lightPos", lightPos);
         glBindVertexArray(vao);
         glDrawArrays(GL_LINES, 0, v.size());
 
@@ -422,6 +431,7 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGui::DockSpaceOverViewport(viewport, dockspace_flags);
         ImGui::Begin("Structure Settings");
         if (ImGui::DragInt3("Dimension", dims, 1.0f, 2, 100)) {
             generateRandomStructure(allNodes, dims, space);
@@ -442,7 +452,16 @@ int main() {
         ImGui::DragFloat("Radius", &radius, 0.01);
         ImGui::InputFloat("Resolution", &radius);
         ImGui::End();
+
+        ImGui::Begin("Render Settings");
+        ImGui::DragFloat3("Light Pos", &lightPos[0], 0.05);
+        ImGui::End();
         ImGui::Render();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         glfwPollEvents();

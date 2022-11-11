@@ -123,31 +123,43 @@ void processInput(GLFWwindow* window)
 }
 
 void deleteStructure(Node***& nodes, int dims[3]) {
+    /*
     for (int i = 0; i < dims[0]; i++) {
         for (int j = 0; j < dims[1]; j++) {
-            delete nodes[i][j];
+            delete[] nodes[i][j];
         }
         delete nodes[i];
-    }
-    delete nodes;
+    }*/
+    delete[] nodes;
 }
 
-void generateRandomStructure(Node***& nodes, int dims[3], float space) {
-    if (nodes != nullptr) {
-        deleteStructure(nodes, dims);
-    }
-        
-    nodes = new Node * *[dims[0]];
+void initStructure(Node***& nodes, int dims[3]) {
+    nodes = new Node ** [dims[0]];
     for (int i = 0; i < dims[0]; i++) {
         nodes[i] = new Node * [dims[1]];
         for (int j = 0; j < dims[1]; j++) {
             nodes[i][j] = new Node[dims[2]];
+        }
+    }
+}
+
+void randomizeStructure(Node***& nodes, int dims[3]) {
+    for (int i = 0; i < dims[0]; i++) {
+        for (int j = 0; j < dims[1]; j++) {
             for (int k = 0; k < dims[2]; k++) {
-                int config = std::rand() % 8;
-                nodes[i][j][k].config = config;
+                nodes[i][j][k].config = std::rand() % 8;
+            }
+        }
+    }
+}
+
+void updateStructure(Node***& nodes, int dims[3], float space) {
+    for (int i = 0; i < dims[0]; i++) {
+        for (int j = 0; j < dims[1]; j++) {
+            for (int k = 0; k < dims[2]; k++) {
                 //printf("config of (%i, %i, %i) is %i\n", i, j, k, config);
                 nodes[i][j][k].pos = glm::vec3(i * space, j * space, k * space);
-                switch (config)
+                switch (nodes[i][j][k].config)
                 {
                 case 0:
                     nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
@@ -220,6 +232,69 @@ void generateRandomStructure(Node***& nodes, int dims[3], float space) {
     }
 }
 
+void generateRandomStructure(Node***& nodes, int dims[3], float space) {
+    if (nodes != nullptr) {
+        deleteStructure(nodes, dims);
+    }
+    initStructure(nodes, dims);
+    randomizeStructure(nodes, dims);
+    updateStructure(nodes, dims, space);
+}
+
+
+void generateStructureData(Node***& nodes, int dims[3], std::vector<glm::vec3>& v, std::vector<glm::vec3>& c) {
+    v.clear();
+    c.clear();
+    std::vector<glm::vec3> edgesx;
+    std::vector<glm::vec3> edgesy;
+    std::vector<glm::vec3> edgesz;
+    std::vector<glm::vec3> colx;
+    std::vector<glm::vec3> coly;
+    std::vector<glm::vec3> colz;
+    for (int i = 0; i < dims[0]; i++) {
+        for (int j = 0; j < dims[1]; j++) {
+            for (int k = 0; k < dims[2]; k++) {
+                if (i != 0) {
+                    edgesx.push_back(nodes[i - 1][j][k].e1[1]);
+                    edgesx.push_back(nodes[i][j][k].e1[0]);
+                    colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                    colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                }
+                if (j != 0) {
+                    edgesy.push_back(nodes[i][j - 1][k].e2[1]);
+                    edgesy.push_back(nodes[i][j][k].e2[0]);
+                    coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                    coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                }
+                if (k != 0) {
+                    edgesz.push_back(nodes[i][j][k - 1].e3[1]);
+                    edgesz.push_back(nodes[i][j][k].e3[0]);
+                    colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                    colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                }
+                edgesx.push_back(nodes[i][j][k].e1[0]);
+                edgesx.push_back(nodes[i][j][k].e1[1]);
+                edgesy.push_back(nodes[i][j][k].e2[0]);
+                edgesy.push_back(nodes[i][j][k].e2[1]);
+                edgesz.push_back(nodes[i][j][k].e3[0]);
+                edgesz.push_back(nodes[i][j][k].e3[1]);
+                colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+            }
+        }
+    }
+    v.insert(v.end(), edgesx.begin(), edgesx.end());
+    v.insert(v.end(), edgesy.begin(), edgesy.end());
+    v.insert(v.end(), edgesz.begin(), edgesz.end());
+    c.insert(c.end(), colx.begin(), colx.end());
+    c.insert(c.end(), coly.begin(), coly.end());
+    c.insert(c.end(), colz.begin(), colz.end());
+}
+
 int main() {
     //set glfw
     glfwInit();
@@ -251,53 +326,10 @@ int main() {
     int len = dims[0] * dims[1] * dims[2];
     Node*** allNodes = nullptr;
     generateRandomStructure(allNodes, dims, space);
-
-    std::vector<glm::vec3> edgesx;
-    std::vector<glm::vec3> edgesy;
-    std::vector<glm::vec3> edgesz;
-    std::vector<glm::vec3> colx;
-    std::vector<glm::vec3> coly;
-    std::vector<glm::vec3> colz;
-    for (int i = 0; i < dims[0]; i++) {
-        for (int j = 0; j < dims[1]; j++) {
-            for (int k = 0; k < dims[2]; k++) {
-                if (i != 0) {
-                    edgesx.push_back(allNodes[i-1][j][k].e1[1]);
-                    edgesx.push_back(allNodes[i][j][k].e1[0]);
-                    colx.push_back(glm::vec3(1.0f,0.0f,0.0f));
-                    colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                }
-                if (j != 0) {
-                    edgesy.push_back(allNodes[i][j - 1][k].e2[1]);
-                    edgesy.push_back(allNodes[i][j][k].e2[0]);
-                    coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                }
-                if (k != 0) {
-                    edgesz.push_back(allNodes[i][j][k - 1].e3[1]);
-                    edgesz.push_back(allNodes[i][j][k].e3[0]);
-                    colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                }
-                edgesx.push_back(allNodes[i][j][k].e1[0]);
-                edgesx.push_back(allNodes[i][j][k].e1[1]);
-                edgesy.push_back(allNodes[i][j][k].e2[0]);
-                edgesy.push_back(allNodes[i][j][k].e2[1]);
-                edgesz.push_back(allNodes[i][j][k].e3[0]);
-                edgesz.push_back(allNodes[i][j][k].e3[1]);
-                colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-            }
-        }
-    }
-    edgesx.insert(edgesx.end(), edgesy.begin(), edgesy.end());
-    edgesx.insert(edgesx.end(), edgesz.begin(), edgesz.end());
-    colx.insert(colx.end(), coly.begin(), coly.end());
-    colx.insert(colx.end(), colz.begin(), colz.end());
+   
+    std::vector<glm::vec3> v;
+    std::vector<glm::vec3> c;
+    generateStructureData(allNodes, dims, v, c);
     unsigned int vao, vbo_pos, vbo_col;
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo_pos);
@@ -305,13 +337,13 @@ int main() {
 
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * edgesx.size(), &edgesx[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
     // position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * colx.size(), &colx[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
 
@@ -355,7 +387,7 @@ int main() {
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
-
+    float radius = 1.0f;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -382,17 +414,33 @@ int main() {
         shader.setMat4("projection", projection);
         glm::mat4 model = glm::mat4(1.0f);
         shader.setMat4("model", model);
+        shader.setFloat("rad", radius);
         glBindVertexArray(vao);
-        glDrawArrays(GL_LINES, 0, edgesx.size());
+        glDrawArrays(GL_LINES, 0, v.size());
 
         //start of imgui init stuff
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Structure Settings");
-        if (ImGui::DragInt3("Row", dims)) {
-        
+        if (ImGui::DragInt3("Dimension", dims, 1.0f, 2, 100)) {
+            generateRandomStructure(allNodes, dims, space);
+            generateStructureData(allNodes, dims, v, c);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
         }
+        if (ImGui::DragFloat("Space", &space)) {
+            updateStructure(allNodes, dims, space);
+            generateStructureData(allNodes, dims, v, c);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+        }
+        ImGui::DragFloat("Radius", &radius, 0.01);
+        ImGui::InputFloat("Resolution", &radius);
         ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

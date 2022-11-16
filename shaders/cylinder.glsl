@@ -44,7 +44,7 @@ void main(){
 	vec4 pos2 = projection * view * model * gl_in[1].gl_Position;
 	fragPos = (model * gl_in[0].gl_Position).xyz;
 	fCol = vCol[0];
-	int res = 32;
+	int res = 8;
 	mat3 rot = rotationMatrix(dir.xyz, 2*PI/res);
 	for(int i = 0; i < res; i++){
 		
@@ -52,7 +52,7 @@ void main(){
 		perp = rot * perp;
 		vec3 v2 = rad * perp;
 		vec3 v3 = vec3(0.0f,0.0f,0.0f);
-		/*
+		
 		normal = normalize(cross(v1-v2, v2-v3));
 
 		gl_Position = pos1 + projection * view * model * vec4(v1,0.0f);
@@ -61,7 +61,6 @@ void main(){
 		EmitVertex();
 		gl_Position = pos1 + projection * view * model * vec4(v3,0.0f);
 		EmitVertex();
-		*/
 		normal = normalize(cross(v1-v2, dir.xyz));
 		gl_Position = pos1 + projection * view * model * vec4(v1,0.0f);
 		EmitVertex();
@@ -76,7 +75,6 @@ void main(){
 		//EmitVertex();
 		gl_Position = pos2 + projection * view * model * vec4(v2,0.0f);
 		EmitVertex();
-		/*
 		normal = normalize(cross(v2-v1, v2-v3));
 		gl_Position = pos2 + projection * view * model * vec4(v1,0.0f);
 		EmitVertex();
@@ -84,7 +82,6 @@ void main(){
 		EmitVertex();
 		gl_Position = pos2 + projection * view * model * vec4(v3,0.0f);
 		EmitVertex();
-		*/
 	}
 	EndPrimitive();
 	

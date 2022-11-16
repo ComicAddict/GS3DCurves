@@ -27,7 +27,7 @@ float sensitivity = 5.0f;
 bool focused = false;
 
 bool firstMouse = true;
-float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float yaw = 90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
 float lastX = 1920.0f / 2.0;
 float lastY = 1080.0 / 2.0;
@@ -38,6 +38,18 @@ const unsigned int SCR_HEIGHT = 600;
 
 float deltaTimeFrame = .0f;
 float lastFrame = .0f;
+
+/*
+* TODO:
+    shadow
+    camera priority
+    connections
+
+    cubic interpolation
+    b-spline ya da
+
+    rule based - generation
+*/
 
 struct Node {
     int config;
@@ -94,7 +106,6 @@ glm::vec3 getDispNodeZ(int config) {
         return glm::vec3(-1.0f, -1.0f, 0.0f);
     }
 }
-
 
 void processInput(GLFWwindow* window)
 {
@@ -177,13 +188,13 @@ void updateStructure(Node***& nodes, int dims[3], float space) {
                 nodes[i][j][k].e3[1] = space * getDispNodeZ(3) / 4.0f;
 
                 if (nodes[i][j][k].config & (1 << 0)) {
-                    //printf("mirror about origin\n");
-                    nodes[i][j][k].e1[0] *= -1.0f;
-                    nodes[i][j][k].e1[1] *= -1.0f;
-                    nodes[i][j][k].e2[0] *= -1.0f;
-                    nodes[i][j][k].e2[1] *= -1.0f;
-                    nodes[i][j][k].e3[0] *= -1.0f;
-                    nodes[i][j][k].e3[1] *= -1.0f;
+                    //printf("mirror about xy\n");
+                    nodes[i][j][k].e1[0].z *= -1.0f;
+                    nodes[i][j][k].e1[1].z *= -1.0f;
+                    nodes[i][j][k].e2[0].z *= -1.0f;
+                    nodes[i][j][k].e2[1].z *= -1.0f;
+                    nodes[i][j][k].e3[0].z *= -1.0f;
+                    nodes[i][j][k].e3[1].z *= -1.0f;
                 }
 
                 if (nodes[i][j][k].config & (1 << 1)) {
@@ -358,6 +369,11 @@ void generateStructureData(Node***& nodes, int dims[3], std::vector<glm::vec3>& 
     c.insert(c.end(), colz.begin(), colz.end());
 }
 
+void updateBufferData(unsigned int& bufIndex, std::vector<glm::vec3>& data) {
+    glBindBuffer(GL_ARRAY_BUFFER, bufIndex);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * data.size(), &data[0], GL_DYNAMIC_DRAW);
+}
+
 int main() {
     //set glfw
     glfwInit();
@@ -454,14 +470,16 @@ int main() {
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
-    float radius = 1.0f;
+    float radius = 0.3f;
+    float orthoScale = 10.0f;
     glm::vec3 lightPos = { 10.0f,10.f,10.f };
-    bool xyz = true, xz = true, yz = true;
+    bool xz = true, yz = true, xy = true;
     int config = 7;
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     //ImGui::SetNextWindowPos(viewport->Pos);
     //ImGui::SetNextWindowSize(viewport->Size);
     //ImGui::SetNextWindowViewport(viewport->ID);
+    bool ortho = true;
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
     while (!glfwWindowShouldClose(window))
     {
@@ -482,8 +500,12 @@ int main() {
         shader.setMat4("view", view);
 
         glfwGetWindowSize(window, &width, &height);
-        
+
+        float ratio = (float)width / (float)height;
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.01f, 100000.0f);
+        if(ortho)
+            projection = glm::ortho(-orthoScale * ratio, orthoScale * ratio, -orthoScale, orthoScale, -1000.0f, 1000.0f);
+        
         shader.setMat4("projection", projection);
         glm::mat4 model = glm::mat4(1.0f);
         shader.setMat4("model", model);
@@ -501,45 +523,35 @@ int main() {
         if (ImGui::DragInt3("Dimension", dims, .2f, 2, 100)) {
             generateRandomStructure(allNodes, dims, space, config);
             generateStructureData(allNodes, dims, v, c);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
         }
-        if (ImGui::DragFloat("Space", &space)) {
+        if (ImGui::DragFloat("Space", &space, 0.1f, 0.01f, 100.0f)) {
             updateStructure(allNodes, dims, space);
             generateStructureData(allNodes, dims, v, c);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
         }
-        if (ImGui::Checkbox("Enable XYZ Mirror", &xyz)) {
-            config = xyz * 1 + xz * 2 + yz * 4;
+        if (ImGui::Checkbox("Enable XY Mirror", &xy)) {
+            config = xy * 1 + yz * 2 + xz * 4;
             generateRandomStructure(allNodes, dims, space, config);
             generateStructureData(allNodes, dims, v, c);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
         }
         if (ImGui::Checkbox("Enable XZ Mirror", &xz) ) {
-            config = xyz * 1 + xz * 2 + yz * 4;
+            config = xy * 1 + yz * 2 + xz * 4;
             generateRandomStructure(allNodes, dims, space, config);
             generateStructureData(allNodes, dims, v, c);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
         }
         if (ImGui::Checkbox("Enable YZ Mirror", &yz)) {
-            config = xyz * 1 + xz * 2 + yz * 4;
+            config = xy * 1 + yz * 2 + xz * 4;
             generateRandomStructure(allNodes, dims, space, config);
             generateStructureData(allNodes, dims, v, c);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_pos);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * v.size(), &v[0], GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo_col);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * c.size(), &c[0], GL_DYNAMIC_DRAW);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
         }
         ImGui::DragFloat("Radius", &radius, 0.01);
         ImGui::InputFloat("Resolution", &radius);
@@ -547,6 +559,9 @@ int main() {
 
         ImGui::Begin("Render Settings");
         ImGui::DragFloat3("Light Pos", &lightPos[0], 0.05);
+        ImGui::Checkbox("Orthographic", &ortho);
+        if(ortho)
+            ImGui::DragFloat("Orthographic Scale", &orthoScale, 0.05, 0.01f, 100.0f);
         ImGui::End();
         ImGui::Render();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -564,15 +579,12 @@ int main() {
     return 0;
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
-
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
@@ -635,7 +647,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int modsd
     }
 }
 
-
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 
@@ -650,3 +661,4 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     if (fov > 45.0f)
         fov = 45.0f;
 }
+

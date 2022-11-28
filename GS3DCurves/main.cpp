@@ -164,6 +164,19 @@ void randomizeStructure(Node***& nodes, int dims[3], int config) {
     }
 }
 
+void abcStructure(Node***& nodes, int dims[3], int config, int a, int b, int c) {
+    for (int i = 0; i < dims[0]; i++) {
+        for (int j = 0; j < dims[1]; j++) {
+            for (int k = 0; k < dims[2]; k++) {
+                if((i+c*(j+k)) % (a+b) < a)
+                    nodes[i][j][k].config = 0;
+                else
+                    nodes[i][j][k].config = config;
+            }
+        }
+    }
+}
+
 void randomizeStructure(Node***& nodes, int dims[3]) {
     for (int i = 0; i < dims[0]; i++) {
         for (int j = 0; j < dims[1]; j++) {
@@ -223,76 +236,6 @@ void updateStructure(Node***& nodes, int dims[3], float space) {
                 nodes[i][j][k].e2[1] += glm::vec3(i * space, j * space + space / 4, k * space);
                 nodes[i][j][k].e3[0] += glm::vec3(i * space, j * space, k * space - space / 4);
                 nodes[i][j][k].e3[1] += glm::vec3(i * space, j * space, k * space + space / 4);
-                /*
-                switch (nodes[i][j][k].config)
-                {
-                case 0:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(3) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(3) / 4.0f;
-                    break;
-                case 1:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(0) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(0) / 4.0f;
-                    break;
-                case 2:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(2) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(1) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(1) / 4.0f;
-                    break;
-                case 3:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(1) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(2) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(2) / 4.0f;
-                    break;
-                case 4:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(0) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(2) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(2) / 4.0f;
-                    break;
-                case 5:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(3) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(1) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(1) / 4.0f;
-                    break;
-                case 6:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(1) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(3) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(0) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(0) / 4.0f;
-                    break;
-                case 7:
-                    nodes[i][j][k].e1[0] = glm::vec3(i * space - space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
-                    nodes[i][j][k].e1[1] = glm::vec3(i * space + space / 4, j * space, k * space) + space * getDispNodeX(2) / 4.0f;
-                    nodes[i][j][k].e2[0] = glm::vec3(i * space, j * space - space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
-                    nodes[i][j][k].e2[1] = glm::vec3(i * space, j * space + space / 4, k * space) + space * getDispNodeY(0) / 4.0f;
-                    nodes[i][j][k].e3[0] = glm::vec3(i * space, j * space, k * space - space / 4) + space * getDispNodeZ(3) / 4.0f;
-                    nodes[i][j][k].e3[1] = glm::vec3(i * space, j * space, k * space + space / 4) + space * getDispNodeZ(3) / 4.0f;
-                    break;
-
-                }
-                */
             }
         }
     }
@@ -313,6 +256,15 @@ void generateRandomStructure(Node***& nodes, int dims[3], float space, int confi
     }
     initStructure(nodes, dims);
     randomizeStructure(nodes, dims, config);
+    updateStructure(nodes, dims, space);
+}
+
+void generateABCStructure(Node***& nodes, int dims[3], float space, int config, int a, int b, int c) {
+    if (nodes != nullptr) {
+        deleteStructure(nodes, dims);
+    }
+    initStructure(nodes, dims);
+    abcStructure(nodes, dims, config, a, b, c);
     updateStructure(nodes, dims, space);
 }
 
@@ -367,6 +319,72 @@ void generateStructureData(Node***& nodes, int dims[3], std::vector<glm::vec3>& 
     c.insert(c.end(), colx.begin(), colx.end());
     c.insert(c.end(), coly.begin(), coly.end());
     c.insert(c.end(), colz.begin(), colz.end());
+}
+
+void generateStructureData(Node***& nodes, int dims[3], std::vector<glm::vec3>& v, std::vector<glm::vec3>& c, int axis) {
+    v.clear();
+    c.clear();
+    std::vector<glm::vec3> edgesx;
+    std::vector<glm::vec3> edgesy;
+    std::vector<glm::vec3> edgesz;
+    std::vector<glm::vec3> colx;
+    std::vector<glm::vec3> coly;
+    std::vector<glm::vec3> colz;
+    for (int i = 0; i < dims[0]; i++) {
+        for (int j = 0; j < dims[1]; j++) {
+            for (int k = 0; k < dims[2]; k++) {
+                if (i != 0) {
+                    edgesx.push_back(nodes[i - 1][j][k].e1[1]);
+                    edgesx.push_back(nodes[i][j][k].e1[0]);
+                    colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                    colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                }
+                if (j != 0) {
+                    edgesy.push_back(nodes[i][j - 1][k].e2[1]);
+                    edgesy.push_back(nodes[i][j][k].e2[0]);
+                    coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                    coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                }
+                if (k != 0) {
+                    edgesz.push_back(nodes[i][j][k - 1].e3[1]);
+                    edgesz.push_back(nodes[i][j][k].e3[0]);
+                    colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                    colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                }
+                edgesx.push_back(nodes[i][j][k].e1[0]);
+                edgesx.push_back(nodes[i][j][k].e1[1]);
+                edgesy.push_back(nodes[i][j][k].e2[0]);
+                edgesy.push_back(nodes[i][j][k].e2[1]);
+                edgesz.push_back(nodes[i][j][k].e3[0]);
+                edgesz.push_back(nodes[i][j][k].e3[1]);
+                colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                colx.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                coly.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                colz.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+            }
+        }
+    }
+    
+    if (axis & (1 << 0)) {
+        v.insert(v.end(), edgesx.begin(), edgesx.end());
+        c.insert(c.end(), colx.begin(), colx.end());
+    }
+    
+    if (axis & (1 << 1)) {
+        v.insert(v.end(), edgesy.begin(), edgesy.end());
+        c.insert(c.end(), coly.begin(), coly.end());
+    }
+    
+    if (axis & (1 << 2)) {
+        v.insert(v.end(), edgesz.begin(), edgesz.end());
+        c.insert(c.end(), colz.begin(), colz.end());
+    }
+    
+    
+    
+    
 }
 
 void updateBufferData(unsigned int& bufIndex, std::vector<glm::vec3>& data) {
@@ -426,29 +444,6 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
 
-
-    unsigned int VAO_plane;
-    glGenVertexArrays(1, &VAO_plane);
-
-    float planeVertices[] = {
-        10.0f,10.0f,0.0f,
-        -10.0f,10.0f,0.0f,
-        -10.0f,-10.0f,0.0f,
-        -10.0f,-10.0f,0.0f,
-        10.0f,-10.0f,0.0f,
-        10.0f,10.0f,0.0f
-    };
-
-    unsigned int VBO_pos_p;
-    glGenBuffers(1, &VBO_pos_p);
-
-    glBindVertexArray(VAO_plane);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO_pos_p);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
     int width, height;
     Shader shader = Shader("C:\\Src\\shaders\\linevertex.glsl", "C:\\Src\\shaders\\linefrag.glsl", "C:\\Src\\shaders\\cylinder.glsl");
     
@@ -473,13 +468,16 @@ int main() {
     float radius = 0.3f;
     float orthoScale = 10.0f;
     glm::vec3 lightPos = { 10.0f,10.f,10.f };
-    bool xz = true, yz = true, xy = true;
+    bool xz = true, yz = true, xy = true, xyz = false, x = true, y = true, z = true;
     int config = 7;
+    int axis = 7;
+    int ABC[3] = { 1,1,1 };
+
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     //ImGui::SetNextWindowPos(viewport->Pos);
     //ImGui::SetNextWindowSize(viewport->Size);
     //ImGui::SetNextWindowViewport(viewport->ID);
-    bool ortho = true;
+    bool ortho = false;
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
     while (!glfwWindowShouldClose(window))
     {
@@ -521,35 +519,93 @@ int main() {
         ImGui::DockSpaceOverViewport(viewport, dockspace_flags);
         ImGui::Begin("Structure Settings");
         if (ImGui::DragInt3("Dimension", dims, .2f, 2, 100)) {
-            generateRandomStructure(allNodes, dims, space, config);
-            generateStructureData(allNodes, dims, v, c);
+            if(!xyz)
+                generateRandomStructure(allNodes, dims, space, config);
+            else
+                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
         }
         if (ImGui::DragFloat("Space", &space, 0.1f, 0.01f, 100.0f)) {
             updateStructure(allNodes, dims, space);
-            generateStructureData(allNodes, dims, v, c);
+            generateStructureData(allNodes, dims, v, c, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
         }
         if (ImGui::Checkbox("Enable XY Mirror", &xy)) {
             config = xy * 1 + yz * 2 + xz * 4;
-            generateRandomStructure(allNodes, dims, space, config);
-            generateStructureData(allNodes, dims, v, c);
+            if (!xyz)
+                generateRandomStructure(allNodes, dims, space, config);
+            else
+                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
         }
         if (ImGui::Checkbox("Enable XZ Mirror", &xz) ) {
             config = xy * 1 + yz * 2 + xz * 4;
-            generateRandomStructure(allNodes, dims, space, config);
-            generateStructureData(allNodes, dims, v, c);
+            if (!xyz)
+                generateRandomStructure(allNodes, dims, space, config);
+            else
+                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
         }
         if (ImGui::Checkbox("Enable YZ Mirror", &yz)) {
             config = xy * 1 + yz * 2 + xz * 4;
-            generateRandomStructure(allNodes, dims, space, config);
-            generateStructureData(allNodes, dims, v, c);
+            if (!xyz)
+                generateRandomStructure(allNodes, dims, space, config);
+            else
+                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
+        }
+        if (ImGui::Checkbox("Only XYZ Mirror", &xyz)) {
+            xy = true;
+            yz = true;
+            xz = true;
+            config = xy * 1 + yz * 2 + xz * 4;
+            generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
+        }
+        if (ImGui::DragInt3("ABC", ABC, .2f, 1, 70)) {
+            generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
+        }
+        if (ImGui::Checkbox("X Strands", &x)) {
+            axis = x * 1 + y * 2 + z * 4;
+            if (!xyz)
+                generateRandomStructure(allNodes, dims, space, config);
+            else
+                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
+        }
+        if (ImGui::Checkbox("Y Strands", &y)) {
+            axis = x * 1 + y * 2 + z * 4;
+            if (!xyz)
+                generateRandomStructure(allNodes, dims, space, config);
+            else
+                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
+        }
+        if (ImGui::Checkbox("Z Strands", &z)) {
+            axis = x * 1 + y * 2 + z * 4;
+            if (!xyz)
+                generateRandomStructure(allNodes, dims, space, config);
+            else
+                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            generateStructureData(allNodes, dims, v, c, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
         }

@@ -387,6 +387,30 @@ void generateStructureData(Node***& nodes, int dims[3], std::vector<glm::vec3>& 
     
 }
 
+void generateGridData(std::vector<glm::vec3>& gridVertices, int a) {
+    gridVertices.clear();
+    glm::vec3 orig = glm::vec3(-a/2.0f, -a/2.0f, -2.0f);
+    int sq = a * a;
+    for (int i = 0; i < sq; i++) {
+        glm::vec3 p1(i % a, i / a, 0.0f);
+        glm::vec3 p2(i % a + 1, i / a, 0.0f);
+        glm::vec3 p3(i % a, i / a + 1, 0.0f);
+        glm::vec3 p4(i % a + 1, i / a + 1, 0.0f);
+
+        gridVertices.push_back(orig + p1);
+        gridVertices.push_back(orig + p2);
+
+        gridVertices.push_back(orig + p1);
+        gridVertices.push_back(orig + p3);
+
+        gridVertices.push_back(orig + p2);
+        gridVertices.push_back(orig + p4);
+
+        gridVertices.push_back(orig + p3);
+        gridVertices.push_back(orig + p4);
+    }
+}
+
 void updateBufferData(unsigned int& bufIndex, std::vector<glm::vec3>& data) {
     glBindBuffer(GL_ARRAY_BUFFER, bufIndex);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * data.size(), &data[0], GL_DYNAMIC_DRAW);
@@ -444,9 +468,77 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
 
+    unsigned int VAO_plane;
+    glGenVertexArrays(1, &VAO_plane);
+
+    float axisVertices[] = {
+        0.0f,0.0f,0.0f,
+        0.0f,0.0f,1.0f,
+        0.0f,0.0f,1.0f,
+        0.0f,0.0f,1.0f,
+
+        0.0f,0.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,1.0f,0.0f,
+
+        0.0f,0.0f,0.0f,
+        1.0f,0.0f,0.0f,
+        1.0f,0.0f,0.0f,
+        1.0f,0.0f,0.0f
+    };
+
+    unsigned int VBO_pos_p;
+    glGenBuffers(1, &VBO_pos_p);
+
+    glBindVertexArray(VAO_plane);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_pos_p);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(axisVertices), &axisVertices[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+
+    std::vector<glm::vec3> gridVertices;
+    glm::vec3 orig = glm::vec3(-8.0f, -8.0f, -2.0f);
+    for (int i = 0; i < 256; i++) {
+        glm::vec3 p1(i % 16, i / 16, 0.0f);
+        glm::vec3 p2(i % 16 + 1, i / 16, 0.0f);
+        glm::vec3 p3(i % 16, i / 16 + 1, 0.0f);
+        glm::vec3 p4(i % 16 + 1, i / 16 + 1, 0.0f);
+
+        gridVertices.push_back(orig + p1);
+        gridVertices.push_back(orig + p2);
+
+        gridVertices.push_back(orig + p1);
+        gridVertices.push_back(orig + p3);
+
+        gridVertices.push_back(orig + p2);
+        gridVertices.push_back(orig + p4);
+
+        gridVertices.push_back(orig + p3);
+        gridVertices.push_back(orig + p4);
+    }
+
+    unsigned int VAO_grid;
+    glGenVertexArrays(1, &VAO_grid);
+
+    unsigned int VBO_grid;
+    glGenBuffers(1, &VBO_grid);
+
+    glBindVertexArray(VAO_grid);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_grid);
+    glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * 3 * sizeof(float), &gridVertices[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
     int width, height;
     Shader shader = Shader("C:\\Src\\shaders\\linevertex.glsl", "C:\\Src\\shaders\\linefrag.glsl", "C:\\Src\\shaders\\cylinder.glsl");
-    
+    Shader lineshader = Shader("C:\\Src\\shaders\\vertCoss.glsl", "C:\\Src\\shaders\\fragCoss.glsl");
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -468,8 +560,8 @@ int main() {
     float radius = 0.3f;
     float orthoScale = 10.0f;
     glm::vec3 lightPos = { 10.0f,10.f,10.f };
-    bool xz = true, yz = true, xy = true, xyz = false, x = true, y = true, z = true;
-    int config = 7;
+    bool xz = true, yz = true, xy = true, xyz = false, x = true, y = true, z = true, ax = true, grid = true;
+    int config = 7, gridSize = 8;
     int axis = 7;
     int ABC[3] = { 1,1,1 };
 
@@ -505,6 +597,7 @@ int main() {
             projection = glm::ortho(-orthoScale * ratio, orthoScale * ratio, -orthoScale, orthoScale, -1000.0f, 1000.0f);
         
         shader.setMat4("projection", projection);
+        
         glm::mat4 model = glm::mat4(1.0f);
         shader.setMat4("model", model);
         shader.setFloat("rad", radius);
@@ -512,6 +605,19 @@ int main() {
         glBindVertexArray(vao);
         glDrawArrays(GL_LINES, 0, v.size());
 
+        lineshader.use();
+        lineshader.setMat4("projection", projection);
+        lineshader.setMat4("view", view);
+        lineshader.setMat4("model", model);
+        if (grid) {
+            glBindVertexArray(VAO_grid);
+            glDrawArrays(GL_LINES, 0, gridVertices.size());
+        }
+        if (ax) {
+            glBindVertexArray(VAO_plane);
+            glDrawArrays(GL_LINES, 0, 12);
+        }
+        
         //start of imgui init stuff
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -519,6 +625,21 @@ int main() {
         ImGui::DockSpaceOverViewport(viewport, dockspace_flags);
         ImGui::Begin("Structure Settings");
         if (ImGui::DragInt3("Dimension", dims, .2f, 2, 100)) {
+            if (dims[0] == 0)
+                dims[0] = 1;
+            if (dims[1] == 0)
+                dims[1] = 1;
+            if (dims[2] == 0)
+                dims[2] = 1;
+            if (dims[0] > 50)
+                dims[0] = 50;
+            if (dims[1] > 50)
+                dims[1] = 50;
+            if (dims[2] > 50)
+                dims[2] = 50;
+            lightPos[0] = dims[0] * 2.0f;
+            lightPos[1] = dims[1] * 2.0f;
+            lightPos[2] = dims[2] + 100.0f;
             if(!xyz)
                 generateRandomStructure(allNodes, dims, space, config);
             else
@@ -574,6 +695,10 @@ int main() {
             updateBufferData(vbo_col, c);
         }
         if (ImGui::DragInt3("ABC", ABC, .2f, 1, 70)) {
+            if (ABC[0] == 0)
+                ABC[0] = 1;
+            if (ABC[1] == 0)
+                ABC[1] = 1;
             generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
             generateStructureData(allNodes, dims, v, c, axis);
             updateBufferData(vbo_pos, v);
@@ -618,6 +743,15 @@ int main() {
         ImGui::Checkbox("Orthographic", &ortho);
         if(ortho)
             ImGui::DragFloat("Orthographic Scale", &orthoScale, 0.05, 0.01f, 100.0f);
+        ImGui::Checkbox("Grid", &grid);
+        
+        if (grid) {
+            if (ImGui::DragInt("Size", &gridSize), 1, 100) {
+                generateGridData(gridVertices, gridSize);
+                updateBufferData(VBO_grid, gridVertices);
+            }
+        }
+        ImGui::Checkbox("Axis", &ax);
         ImGui::End();
         ImGui::Render();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

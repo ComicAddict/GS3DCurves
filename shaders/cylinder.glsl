@@ -44,7 +44,7 @@ void main(){
 	vec4 pos2 = projection * view * model * gl_in[1].gl_Position;
 	fragPos = (model * gl_in[0].gl_Position).xyz;
 	fCol = vCol[0];
-	int res = 8;
+	int res = 6;
 	mat3 rot = rotationMatrix(dir.xyz, 2*PI/res);
 	for(int i = 0; i < res; i++){
 		

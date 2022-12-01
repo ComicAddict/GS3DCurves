@@ -44,7 +44,7 @@ float lastFrame = .0f;
 * TODO:
     shadow
     camera priority
-    connections
+    + connections
 
     cubic interpolation
     b-spline ya da
@@ -52,7 +52,7 @@ float lastFrame = .0f;
     rule based - generation 
     + implemented ABC already
 
-    pipe interface between edges
+    + pipe interface between edges
 */
 
 struct Node {

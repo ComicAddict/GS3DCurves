@@ -97,5 +97,11 @@
     <None Include="..\..\..\..\..\..\..\Src\shaders\linefrag.glsl">
       <Filter>Source Files\shader</Filter>
     </None>
+    <None Include="..\..\..\..\..\..\Src\shaders\vertNorm.glsl">
+      <Filter>Source Files\shader</Filter>
+    </None>
+    <None Include="..\..\..\..\..\..\Src\shaders\fragNorm.glsl">
+      <Filter>Source Files\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

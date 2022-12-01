@@ -167,6 +167,8 @@
     <None Include="..\..\..\..\..\..\..\Src\shaders\linefrag.glsl" />
     <None Include="..\..\..\..\..\..\..\Src\shaders\linevertex.glsl" />
     <None Include="..\..\..\..\..\..\..\Src\shaders\vertex.glsl" />
+    <None Include="..\..\..\..\..\..\Src\shaders\fragNorm.glsl" />
+    <None Include="..\..\..\..\..\..\Src\shaders\vertNorm.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

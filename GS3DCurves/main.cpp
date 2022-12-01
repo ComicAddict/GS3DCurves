@@ -391,6 +391,18 @@ void generateStructureData(Node***& nodes, int dims[3], std::vector<glm::vec3>& 
     
 }
 
+glm::mat3x3 rotationMatrix(glm::vec3 axis, float angle)
+{
+    axis = glm::normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+
+    return glm::mat3x3(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s, oc * axis.z * axis.x + axis.y * s,
+        oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,
+        oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c
+    );
+}
 
 void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3>& v, std::vector<glm::vec3>& c, std::vector<glm::vec3>& n, float radius) {
     v.clear();
@@ -407,45 +419,70 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
     std::vector<glm::vec3> cz;
     glm::vec3 v1;
     glm::vec3 v2;
-    int res = 4;
+    int res = 8;
     for (int i = 0; i < dims[0]; i++) {
         for (int j = 0; j < dims[1]; j++) {
             for (int k = 0; k < dims[2]; k++) {
                 if (i != 0) {
                     v1 = nodes[i - 1][j][k].e1[1];
                     glm::vec3 dir = nodes[i][j][k].e1[0] - nodes[i - 1][j][k].e1[1];
+                    glm::vec3 dir2 = dir;
+                    float r1 = 0.2f;
+                    dir2.x = 0;
+                    dir2 = r1 * glm::normalize(dir2);
+                    glm::vec3 center = v1 + dir;
+                    glm::vec3 ax(1.0f, 0.0f, 0.0f);
+                    glm::vec3 circ1[8];
                     for (int l = 0; l < 8; l++) {
-                        float a1 = l * PI / 16.0f;
-                        float a2 = (l + 1) * PI / 16.0f;
-                        float r1 = 0.2f;
+                        float a3 = l * PI / 16.0f;
 
+                        circ1[l] = glm::vec3(-r1, cos(a3), sin(a3));
+                        
+                    }
+                    glm::vec3 rotAx = glm::cross(ax, dir);
+                    float a1 = PI / 16.0f;
+                    glm::mat3x3 R = rotationMatrix(rotAx, -a1);
+
+                    for (int l = 0; l < 8; l++) {
+                        v2 = v1 + R * ax * r1;
+                        float a2 = 2.0f * PI / res;
+                        glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                        ax = R * ax;
+                        glm::vec3 d1(0.0f, 1.0f, 0.0f);
+                        glm::vec3 d2(0.0f, cos(a2), sin(a2));
+                        glm::vec3 d3(0.0f, 1.0f, 0.0f);
+                        glm::vec3 d4(0.0f, cos(a2), sin(a2));
+                        d1 = radius * d1;
+                        d2 = radius * d2;
                         for (int m = 0; m < res; m++) {
-                            float a3 = m * 2.0f * PI / res;
-                            float a4 = (m + 1) * 2.0f * PI / res;
-                            glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
-                            glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
-                            glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            v.push_back(v1 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d2);
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                            d3 = R * d1;
+                            d4 = R * d2;
+                            glm::vec3 norm(glm::cross(d2 - d1, ax));
+                            //v.push_back(v1 + d1);
+                            //v.push_back(v1 + d2);
+                            //v.push_back(v2 + d3);
+                            //v.push_back(v2 + d3);
+                            //v.push_back(v2 + d4);
+                            //v.push_back(v1 + d2);
+                            //n.push_back(norm);
+                            //n.push_back(norm);
+                            //n.push_back(norm);
+                            //n.push_back(norm);
+                            //n.push_back(norm);
+                            //n.push_back(norm);
+                            //c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                            //c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                            //c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                            //c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                            //c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                            //c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                            d1 = R1 * d1;
+                            d2 = R1 * d2;
                         }
+                        v1 = v2;
                     }
                     //v2 = nodes[i - 1][j][k].e1[1]
+                    /*
                     v2 = nodes[i][j][k].e1[0];
                     for (int l = 0; l < res; l++) {
                         float a1 = l * 2.0f * PI / res;
@@ -471,8 +508,8 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
                         c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                         c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                         c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                    }
-                }
+                    }*/
+                }/*
                 if (j != 0) {
                     v1 = nodes[i][j - 1][k].e2[1];
                     v2 = nodes[i][j][k].e2[0];
@@ -531,7 +568,7 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
                         c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
                         c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
                     }
-                }
+                }*/
                 v1 = nodes[i][j][k].e1[0];
                 v2 = nodes[i][j][k].e1[1];
                 for (int l = 0; l < res; l++) {
@@ -559,7 +596,7 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
                     c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                     c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                 }
-
+                /*
                 v1 = nodes[i][j][k].e2[0];
                 v2 = nodes[i][j][k].e2[1];
                 for (int l = 0; l < res; l++) {
@@ -615,7 +652,7 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
                     c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
                     c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
                 }
-                
+                */
             }
         }
     }

@@ -404,7 +404,7 @@ glm::mat3x3 rotationMatrix(glm::vec3 axis, float angle)
     );
 }
 
-void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3>& v, std::vector<glm::vec3>& c, std::vector<glm::vec3>& n, float radius, int res, float r, int res2) {
+void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3>& v, std::vector<glm::vec3>& c, std::vector<glm::vec3>& n, float radius, int res, float r, int res2, int axis) {
     v.clear();
     c.clear();
     n.clear();
@@ -413,631 +413,510 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
     for (int i = 0; i < dims[0]; i++) {
         for (int j = 0; j < dims[1]; j++) {
             for (int k = 0; k < dims[2]; k++) {
-                if (i != 0) {
-                    int comp = ~(nodes[i - 1][j][k].config ^ nodes[i][j][k].config);
-                    if ((comp & (1 << 0)) && (comp & (1 << 2))) {
-                        v1 = nodes[i - 1][j][k].e1[1];
-                        v2 = nodes[i][j][k].e1[0];
-                        for (int l = 0; l < res; l++) {
-                            float a1 = l * 2.0f * PI / res;
-                            float a2 = (l + 1) * 2.0f * PI / res;
-                            glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
-                            glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
-                            glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            v.push_back(v1 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d2);
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                if (axis & (1 << 0)) {
+                    if (i != 0) {
+                        int comp = ~(nodes[i - 1][j][k].config ^ nodes[i][j][k].config);
+                        if ((comp & (1 << 0)) && (comp & (1 << 2))) {
+                            v1 = nodes[i - 1][j][k].e1[1];
+                            v2 = nodes[i][j][k].e1[0];
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
+                                glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
+                                glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                            }
+                        }
+                        else {
+                            v1 = nodes[i - 1][j][k].e1[1];
+                            glm::vec3 dir = nodes[i][j][k].e1[0] - nodes[i - 1][j][k].e1[1];
+                            glm::vec3 dir2 = dir;
+                            dir2.x = 0;
+                            float r1 = 2.0f * PI * r / (4.0f * res2);
+                            glm::vec3 ax(1.0f, 0.0f, 0.0f);
+                            glm::vec3 rotAx = glm::cross(ax, dir);
+                            float a1 = PI / (2.0f * res2);
+                            glm::mat3x3 R = rotationMatrix(rotAx, -a1);
+                            glm::vec3 d1(0.0f, 1.0f, 0.0f);
+                            float a2 = 2.0f * PI / res;
+                            glm::vec3 d2(0.0f, cos(a2), sin(a2));
+                            glm::vec3 d3(0.0f, 1.0f, 0.0f);
+                            glm::vec3 d4(0.0f, cos(a2), sin(a2));
+                            d1 = radius * d1;
+                            d2 = radius * d2;
+
+                            v2 = v1 + ax * (dir.x/2.0f - r);
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
+                                glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
+                                glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                            }
+                            v1 = v2;
+                            for (int l = 0; l < res2; l++) {
+                                v2 = v1 + R * ax * r1;
+                                glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                                ax = R * ax;
+                                for (int m = 0; m < res; m++) {
+                                    d3 = R * d1;
+                                    d4 = R * d2;
+                                    glm::vec3 norm(glm::cross(d2 - d1, ax));
+                                    v.push_back(v1 + d1);
+                                    v.push_back(v1 + d2);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d4);
+                                    v.push_back(v1 + d2);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    d1 = R1 * d1;
+                                    d2 = R1 * d2;
+                                }
+                                d1 = d3;
+                                d2 = d4;
+                                v1 = v2;
+                            }
+                            R = rotationMatrix(rotAx, a1);
+                            v2 += ax * (glm::length(dir2) - 2.0f * r);
+                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                            for (int m = 0; m < res; m++) {
+                                glm::vec3 norm(glm::cross(d2 - d1, ax));
+                                v.push_back(v1 + d1);
+                                v.push_back(v1 + d2);
+                                v.push_back(v2 + d1);
+                                v.push_back(v2 + d1);
+                                v.push_back(v2 + d2);
+                                v.push_back(v1 + d2);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                d1 = R1 * d1;
+                                d2 = R1 * d2;
+                            }
+                            v1 = v2;
+                            for (int l = 0; l < res2; l++) {
+                                v2 = v1 + R * ax * r1;
+                                glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                                ax = R * ax;
+                                for (int m = 0; m < res; m++) {
+                                    d3 = R * d1;
+                                    d4 = R * d2;
+                                    glm::vec3 norm(glm::cross(d2 - d1, ax));
+                                    v.push_back(v1 + d1);
+                                    v.push_back(v1 + d2);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d4);
+                                    v.push_back(v1 + d2);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    c.push_back(glm::vec3(1.0f, .0f, 0.0f));
+                                    d1 = R1 * d1;
+                                    d2 = R1 * d2;
+                                }
+                                d1 = d3;
+                                d2 = d4;
+                                v1 = v2;
+                            }
+                            v2 = nodes[i][j][k].e1[0];
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
+                                glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
+                                glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                                c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                            }
                         }
                     }
                     else {
-                        v1 = nodes[i - 1][j][k].e1[1];
-                        glm::vec3 dir = nodes[i][j][k].e1[0] - nodes[i - 1][j][k].e1[1];
-                        glm::vec3 dir2 = dir;
-                        dir2.x = 0;
-                        float r1 = 2.0f*PI*r/(4.0f * res2);
-                        glm::vec3 ax(1.0f, 0.0f, 0.0f);
-                        glm::vec3 rotAx = glm::cross(ax, dir);
-                        float a1 = PI / (2.0f * res2);
-                        glm::mat3x3 R = rotationMatrix(rotAx, -a1);
-                        glm::vec3 d1(0.0f, 1.0f, 0.0f);
-                        float a2 = 2.0f * PI / res;
-                        glm::vec3 d2(0.0f, cos(a2), sin(a2));
-                        glm::vec3 d3(0.0f, 1.0f, 0.0f);
-                        glm::vec3 d4(0.0f, cos(a2), sin(a2));
-                        d1 = radius * d1;
-                        d2 = radius * d2;
-                        for (int l = 0; l < res2; l++) {
-                            v2 = v1 + R * ax * r1;
-                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                            ax = R * ax;
-                            for (int m = 0; m < res; m++) {
-                                d3 = R * d1;
-                                d4 = R * d2;
-                                glm::vec3 norm(glm::cross(d2 - d1, ax));
-                                v.push_back(v1 + d1);
-                                v.push_back(v1 + d2);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d4);
-                                v.push_back(v1 + d2);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                d1 = R1 * d1;
-                                d2 = R1 * d2;
-                            }
-                            d1 = d3;
-                            d2 = d4;
-                            v1 = v2;
-                        }
-                        R = rotationMatrix(rotAx, a1);
-                        v2 += ax * (glm::length(dir2) - 2.0f * r);
-                        glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                        for (int m = 0; m < res; m++) {
-                            glm::vec3 norm(glm::cross(d2 - d1, ax));
-                            v.push_back(v1 + d1);
-                            v.push_back(v1 + d2);
-                            v.push_back(v2 + d1);
-                            v.push_back(v2 + d1);
-                            v.push_back(v2 + d2);
-                            v.push_back(v1 + d2);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                            d1 = R1 * d1;
-                            d2 = R1 * d2;
-                        }
-                        v1 = v2;
-                        for (int l = 0; l < res2; l++) {
-                            v2 = v1 + R * ax * r1;
-                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                            ax = R * ax;
-                            for (int m = 0; m < res; m++) {
-                                d3 = R * d1;
-                                d4 = R * d2;
-                                glm::vec3 norm(glm::cross(d2 - d1, ax));
-                                v.push_back(v1 + d1);
-                                v.push_back(v1 + d2);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d4);
-                                v.push_back(v1 + d2);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                c.push_back(glm::vec3(1.0f, .0f, 0.0f));
-                                d1 = R1 * d1;
-                                d2 = R1 * d2;
-                            }
-                            d1 = d3;
-                            d2 = d4;
-                            v1 = v2;
-                        }
-                        v2 = nodes[i][j][k].e1[0];
+                        v1 = nodes[i][j][k].e1[0];
                         for (int l = 0; l < res; l++) {
                             float a1 = l * 2.0f * PI / res;
                             float a2 = (l + 1) * 2.0f * PI / res;
                             glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
                             glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
-                            glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
+                            glm::vec3 norm(-1.0f, 0.0f, 0.0f);
                             n.push_back(norm);
                             n.push_back(norm);
                             n.push_back(norm);
                             v.push_back(v1 + radius * d1);
                             v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d2);
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                            v.push_back(v1);
                             c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                             c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                             c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                         }
                     }
-                }
-                else {
+                    if (i == (dims[0] - 1)) {
+                        v1 = nodes[i][j][k].e1[1];
+                        for (int l = 0; l < res; l++) {
+                            float a1 = l * 2.0f * PI / res;
+                            float a2 = (l + 1) * 2.0f * PI / res;
+                            glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
+                            glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
+                            glm::vec3 norm(1.0f, 0.0f, 0.0f);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            v.push_back(v1 + radius * d1);
+                            v.push_back(v1 + radius * d2);
+                            v.push_back(v1);
+                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                            c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                        }
+                    }
+
                     v1 = nodes[i][j][k].e1[0];
+                    v2 = nodes[i][j][k].e1[1];
                     for (int l = 0; l < res; l++) {
                         float a1 = l * 2.0f * PI / res;
                         float a2 = (l + 1) * 2.0f * PI / res;
                         glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
                         glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
-                        glm::vec3 norm(-1.0f,0.0f,0.0f);
+                        glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
+                        n.push_back(norm);
+                        n.push_back(norm);
+                        n.push_back(norm);
                         n.push_back(norm);
                         n.push_back(norm);
                         n.push_back(norm);
                         v.push_back(v1 + radius * d1);
                         v.push_back(v1 + radius * d2);
-                        v.push_back(v1);
-                        c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                        c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                        c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                    }
-                }
-                if(i == (dims[0] - 1)) {
-                    v1 = nodes[i][j][k].e1[1];
-                    for (int l = 0; l < res; l++) {
-                        float a1 = l * 2.0f * PI / res;
-                        float a2 = (l + 1) * 2.0f * PI / res;
-                        glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
-                        glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
-                        glm::vec3 norm(1.0f, 0.0f, 0.0f);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        v.push_back(v1 + radius * d1);
+                        v.push_back(v2 + radius * d1);
+                        v.push_back(v2 + radius * d1);
                         v.push_back(v1 + radius * d2);
-                        v.push_back(v1);
+                        v.push_back(v2 + radius * d2);
+                        c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                        c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+                        c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                         c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                         c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                         c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
                     }
                 }
-                if (j != 0) {
-                    int comp = ~(nodes[i][j - 1][k].config ^ nodes[i][j][k].config);
-                    if ((comp & (1 << 0)) && (comp & (1 << 1))) {
-                        v1 = nodes[i][j - 1][k].e2[1];
-                        v2 = nodes[i][j][k].e2[0];
-                        for (int l = 0; l < res; l++) {
-                            float a1 = l * 2.0f * PI / res;
-                            float a2 = (l + 1) * 2.0f * PI / res;
-                            glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
-                            glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
-                            glm::vec3 norm(glm::cross(v1 - v2, d1 - d2));
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            v.push_back(v1 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d2);
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                if (axis & (1 << 1)) {
+                    if (j != 0) {
+                        int comp = ~(nodes[i][j - 1][k].config ^ nodes[i][j][k].config);
+                        if ((comp & (1 << 0)) && (comp & (1 << 1))) {
+                            v1 = nodes[i][j - 1][k].e2[1];
+                            v2 = nodes[i][j][k].e2[0];
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
+                                glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
+                                glm::vec3 norm(glm::cross(v1 - v2, d1 - d2));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                            }
+                        }
+                        else {
+                            v1 = nodes[i][j - 1][k].e2[1];
+                            glm::vec3 dir = nodes[i][j][k].e2[0] - nodes[i][j - 1][k].e2[1];
+                            glm::vec3 dir2 = dir;
+                            dir2.y = 0;
+                            float r1 = 2.0f * PI * r / (4.0f * res2);
+                            glm::vec3 ax(0.0f, 1.0f, 0.0f);
+                            glm::vec3 rotAx = glm::cross(ax, dir);
+                            float a1 = PI / (2.0f * res2);
+                            glm::mat3x3 R = rotationMatrix(rotAx, -a1);
+                            glm::vec3 d1(1.0f, 0.0f, 0.0f);
+                            float a2 = 2.0f * PI / res;
+                            glm::vec3 d2(cos(a2), 0.0f, sin(a2));
+                            glm::vec3 d3(1.0f, 0.0f, 0.0f);
+                            glm::vec3 d4(cos(a2), 0.0f, sin(a2));
+                            d1 = radius * d1;
+                            d2 = radius * d2;
+
+                            v2 = v1 + ax * (dir.y / 2.0f - r);
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
+                                glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
+                                glm::vec3 norm(glm::cross(v1 - v2, d1 - d2));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                            }
+                            v1 = v2;
+                            for (int l = 0; l < res2; l++) {
+                                v2 = v1 + R * ax * r1;
+                                glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                                ax = R * ax;
+                                for (int m = 0; m < res; m++) {
+                                    d3 = R * d1;
+                                    d4 = R * d2;
+                                    glm::vec3 norm(glm::cross(d1 - d2, ax));
+                                    v.push_back(v1 + d1);
+                                    v.push_back(v1 + d2);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d4);
+                                    v.push_back(v1 + d2);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    d1 = R1 * d1;
+                                    d2 = R1 * d2;
+                                }
+                                d1 = d3;
+                                d2 = d4;
+                                v1 = v2;
+                            }
+                            R = rotationMatrix(rotAx, a1);
+                            v2 += ax * (glm::length(dir2) - 2.0f * r);
+                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                            for (int m = 0; m < res; m++) {
+                                glm::vec3 norm(glm::cross(d1 - d2, ax));
+                                v.push_back(v1 + d1);
+                                v.push_back(v1 + d2);
+                                v.push_back(v2 + d1);
+                                v.push_back(v2 + d1);
+                                v.push_back(v2 + d2);
+                                v.push_back(v1 + d2);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                d1 = R1 * d1;
+                                d2 = R1 * d2;
+                            }
+                            v1 = v2;
+                            for (int l = 0; l < res2; l++) {
+                                v2 = v1 + R * ax * r1;
+                                glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                                ax = R * ax;
+                                for (int m = 0; m < res; m++) {
+                                    d3 = R * d1;
+                                    d4 = R * d2;
+                                    glm::vec3 norm(glm::cross(d1 - d2, ax));
+                                    v.push_back(v1 + d1);
+                                    v.push_back(v1 + d2);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d4);
+                                    v.push_back(v1 + d2);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                    d1 = R1 * d1;
+                                    d2 = R1 * d2;
+                                }
+                                d1 = d3;
+                                d2 = d4;
+                                v1 = v2;
+                            }
+                            v2 = nodes[i][j][k].e2[0];
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
+                                glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
+                                glm::vec3 norm(glm::cross(v1 - v2, d1 - d2));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                            }
                         }
                     }
                     else {
-                        v1 = nodes[i][j - 1][k].e2[1];
-                        glm::vec3 dir = nodes[i][j][k].e2[0] - nodes[i][j - 1][k].e2[1];
-                        glm::vec3 dir2 = dir;
-                        dir2.y = 0;
-                        float r1 = 2.0f * PI * r /(4.0f * res2);
-                        glm::vec3 ax(0.0f, 1.0f, 0.0f);
-                        glm::vec3 rotAx = glm::cross(ax, dir);
-                        float a1 = PI / (2.0f * res2);
-                        glm::mat3x3 R = rotationMatrix(rotAx, -a1);
-                        glm::vec3 d1(1.0f, 0.0f, 0.0f);
-                        float a2 = 2.0f * PI / res;
-                        glm::vec3 d2(cos(a2), 0.0f, sin(a2));
-                        glm::vec3 d3(1.0f, 0.0f, 0.0f);
-                        glm::vec3 d4(cos(a2), 0.0f, sin(a2));
-                        d1 = radius * d1;
-                        d2 = radius * d2;
-                        for (int l = 0; l < res2; l++) {
-                            v2 = v1 + R * ax * r1;
-                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                            ax = R * ax;
-                            for (int m = 0; m < res; m++) {
-                                d3 = R * d1;
-                                d4 = R * d2;
-                                glm::vec3 norm(glm::cross(d1 - d2, ax));
-                                v.push_back(v1 + d1);
-                                v.push_back(v1 + d2);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d4);
-                                v.push_back(v1 + d2);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                d1 = R1 * d1;
-                                d2 = R1 * d2;
-                            }
-                            d1 = d3;
-                            d2 = d4;
-                            v1 = v2;
-                        }
-                        R = rotationMatrix(rotAx, a1);
-                        v2 += ax * (glm::length(dir2) - 2.0f * r);
-                        glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                        for (int m = 0; m < res; m++) {
-                            glm::vec3 norm(glm::cross(d1 - d2, ax));
-                            v.push_back(v1 + d1);
-                            v.push_back(v1 + d2);
-                            v.push_back(v2 + d1);
-                            v.push_back(v2 + d1);
-                            v.push_back(v2 + d2);
-                            v.push_back(v1 + d2);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            d1 = R1 * d1;
-                            d2 = R1 * d2;
-                        }
-                        v1 = v2;
-                        for (int l = 0; l < res2; l++) {
-                            v2 = v1 + R * ax * r1;
-                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                            ax = R * ax;
-                            for (int m = 0; m < res; m++) {
-                                d3 = R * d1;
-                                d4 = R * d2;
-                                glm::vec3 norm(glm::cross(d1 - d2, ax));
-                                v.push_back(v1 + d1);
-                                v.push_back(v1 + d2);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d4);
-                                v.push_back(v1 + d2);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                                d1 = R1 * d1;
-                                d2 = R1 * d2;
-                            }
-                            d1 = d3;
-                            d2 = d4;
-                            v1 = v2;
-                        }
-                        v2 = nodes[i][j][k].e2[0];
+                        v1 = nodes[i][j][k].e2[0];
                         for (int l = 0; l < res; l++) {
                             float a1 = l * 2.0f * PI / res;
                             float a2 = (l + 1) * 2.0f * PI / res;
                             glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
                             glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
-                            glm::vec3 norm(glm::cross(v1 - v2, d1 - d2));
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
+                            glm::vec3 norm(0.0f, -1.0f, 0.0f);
                             n.push_back(norm);
                             n.push_back(norm);
                             n.push_back(norm);
                             v.push_back(v1 + radius * d1);
                             v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d2);
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                            v.push_back(v1);
                             c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
                             c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
                             c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
                         }
                     }
-                }
-                else {
+                    if (j == (dims[1] - 1)) {
+                        v1 = nodes[i][j][k].e2[1];
+                        for (int l = 0; l < res; l++) {
+                            float a1 = l * 2.0f * PI / res;
+                            float a2 = (l + 1) * 2.0f * PI / res;
+                            glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
+                            glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
+                            glm::vec3 norm(0.0f, 1.0f, 0.0f);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            v.push_back(v1 + radius * d1);
+                            v.push_back(v1 + radius * d2);
+                            v.push_back(v1);
+                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                            c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+                        }
+                    }
+
                     v1 = nodes[i][j][k].e2[0];
-                    for (int l = 0; l < res; l++) {
-                        float a1 = l * 2.0f * PI / res;
-                        float a2 = (l + 1) * 2.0f * PI / res;
-                        glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
-                        glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
-                        glm::vec3 norm(0.0f, -1.0f, 0.0f);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        v.push_back(v1 + radius * d1);
-                        v.push_back(v1 + radius * d2);
-                        v.push_back(v1);
-                        c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                        c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                        c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    }
-                }
-                if(j == (dims[1] - 1)) {
-                    v1 = nodes[i][j][k].e2[1];
-                    for (int l = 0; l < res; l++) {
-                        float a1 = l * 2.0f * PI / res;
-                        float a2 = (l + 1) * 2.0f * PI / res;
-                        glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
-                        glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
-                        glm::vec3 norm(0.0f, 1.0f, 0.0f);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        v.push_back(v1 + radius * d1);
-                        v.push_back(v1 + radius * d2);
-                        v.push_back(v1);
-                        c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                        c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                        c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    }
-                }
-                if (k != 0) {
-                    int comp = ~(nodes[i][j][k - 1].config ^ nodes[i][j][k].config);
-                    if ((comp & (1 << 1)) && (comp & (1 << 2))) {
-                        v1 = nodes[i][j][k - 1].e3[1];
-                        v2 = nodes[i][j][k].e3[0];
-                        for (int l = 0; l < res; l++) {
-                            float a1 = l * 2.0f * PI / res;
-                            float a2 = (l + 1) * 2.0f * PI / res;
-                            glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
-                            glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
-                            glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            v.push_back(v1 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d2);
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                        }
-                    }
-                    else {
-                        v1 = nodes[i][j][k-1].e3[1];
-                        glm::vec3 dir = nodes[i][j][k].e3[0] - nodes[i][j][k - 1].e3[1];
-                        glm::vec3 dir2 = dir;
-                        dir2.z = 0;
-                        float r1 = 2.0f * PI * r / (4.0f * res2);
-                        glm::vec3 ax(0.0f, 0.0f, 1.0f);
-                        glm::vec3 rotAx = glm::cross(ax, dir);
-                        float a1 = PI / (2.0f * res2);
-                        glm::mat3x3 R = rotationMatrix(rotAx, -a1);
-                        glm::vec3 d1(1.0f, 0.0f, 0.0f);
-                        float a2 = 2.0f * PI / res;
-                        glm::vec3 d2(cos(a2), sin(a2), 0.0f);
-                        glm::vec3 d3(1.0f, 0.0f, 0.0f);
-                        glm::vec3 d4(cos(a2), sin(a2), 0.0f);
-                        d1 = radius * d1;
-                        d2 = radius * d2;
-                        for (int l = 0; l < res2; l++) {
-                            v2 = v1 + R * ax * r1;
-                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                            ax = R * ax;
-                            for (int m = 0; m < res; m++) {
-                                d3 = R * d1;
-                                d4 = R * d2;
-                                glm::vec3 norm(glm::cross(d2 - d1, ax));
-                                v.push_back(v1 + d1);
-                                v.push_back(v1 + d2);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d4);
-                                v.push_back(v1 + d2);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                d1 = R1 * d1;
-                                d2 = R1 * d2;
-                            }
-                            d1 = d3;
-                            d2 = d4;
-                            v1 = v2;
-                        }
-                        R = rotationMatrix(rotAx, a1);
-                        v2 += ax * (glm::length(dir2) - 2.0f * r);
-                        glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                        for (int m = 0; m < res; m++) {
-                            glm::vec3 norm(glm::cross(d2 - d1, ax));
-                            v.push_back(v1 + d1);
-                            v.push_back(v1 + d2);
-                            v.push_back(v2 + d1);
-                            v.push_back(v2 + d1);
-                            v.push_back(v2 + d2);
-                            v.push_back(v1 + d2);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            d1 = R1 * d1;
-                            d2 = R1 * d2;
-                        }
-                        v1 = v2;
-                        for (int l = 0; l < res2; l++) {
-                            v2 = v1 + R * ax * r1;
-                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
-                            ax = R * ax;
-                            for (int m = 0; m < res; m++) {
-                                d3 = R * d1;
-                                d4 = R * d2;
-                                glm::vec3 norm(glm::cross(d2 - d1, ax));
-                                v.push_back(v1 + d1);
-                                v.push_back(v1 + d2);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d3);
-                                v.push_back(v2 + d4);
-                                v.push_back(v1 + d2);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                n.push_back(norm);
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                                d1 = R1 * d1;
-                                d2 = R1 * d2;
-                            }
-                            d1 = d3;
-                            d2 = d4;
-                            v1 = v2;
-                        }
-                        v2 = nodes[i][j][k].e3[0];
-                        for (int l = 0; l < res; l++) {
-                            float a1 = l * 2.0f * PI / res;
-                            float a2 = (l + 1) * 2.0f * PI / res;
-                            glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
-                            glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
-                            glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            n.push_back(norm);
-                            v.push_back(v1 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v2 + radius * d1);
-                            v.push_back(v1 + radius * d2);
-                            v.push_back(v2 + radius * d2);
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                        }
-                    }
-                }
-                else {
-                    v1 = nodes[i][j][k].e3[0];
-                    for (int l = 0; l < res; l++) {
-                        float a1 = l * 2.0f * PI / res;
-                        float a2 = (l + 1) * 2.0f * PI / res;
-                        glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
-                        glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
-                        glm::vec3 norm(0.0f, 0.0f, -1.0f);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        v.push_back(v1 + radius * d1);
-                        v.push_back(v1 + radius * d2);
-                        v.push_back(v1);
-                        c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                        c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                        c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    }
-                }
-                if(k == (dims[2] - 1)) {
-                    v1 = nodes[i][j][k].e3[1];
-                    for (int l = 0; l < res; l++) {
-                        float a1 = l * 2.0f * PI / res;
-                        float a2 = (l + 1) * 2.0f * PI / res;
-                        glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
-                        glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
-                        glm::vec3 norm(0.0f, 0.0f, 1.0f);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        n.push_back(norm);
-                        v.push_back(v1 + radius * d1);
-                        v.push_back(v1 + radius * d2);
-                        v.push_back(v1);
-                        c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                        c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                        c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    }
-                }
-                /*
-                if (j != 0) {
-                    v1 = nodes[i][j - 1][k].e2[1];
-                    v2 = nodes[i][j][k].e2[0];
+                    v2 = nodes[i][j][k].e2[1];
                     for (int l = 0; l < res; l++) {
                         float a1 = l * 2.0f * PI / res;
                         float a2 = (l + 1) * 2.0f * PI / res;
@@ -1065,9 +944,245 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
                         c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
                     }
                 }
-                if (k != 0) {
-                    v1 = nodes[i][j][k - 1].e3[1];
-                    v2 = nodes[i][j][k].e3[0];
+                if (axis & (1 << 2)) {
+                    if (k != 0) {
+                        int comp = ~(nodes[i][j][k - 1].config ^ nodes[i][j][k].config);
+                        if ((comp & (1 << 1)) && (comp & (1 << 2))) {
+                            v1 = nodes[i][j][k - 1].e3[1];
+                            v2 = nodes[i][j][k].e3[0];
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
+                                glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
+                                glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                            }
+                        }
+                        else {
+                            v1 = nodes[i][j][k - 1].e3[1];
+                            glm::vec3 dir = nodes[i][j][k].e3[0] - nodes[i][j][k - 1].e3[1];
+                            glm::vec3 dir2 = dir;
+                            dir2.z = 0;
+                            float r1 = 2.0f * PI * r / (4.0f * res2);
+                            glm::vec3 ax(0.0f, 0.0f, 1.0f);
+                            glm::vec3 rotAx = glm::cross(ax, dir);
+                            float a1 = PI / (2.0f * res2);
+                            glm::mat3x3 R = rotationMatrix(rotAx, -a1);
+                            glm::vec3 d1(1.0f, 0.0f, 0.0f);
+                            float a2 = 2.0f * PI / res;
+                            glm::vec3 d2(cos(a2), sin(a2), 0.0f);
+                            glm::vec3 d3(1.0f, 0.0f, 0.0f);
+                            glm::vec3 d4(cos(a2), sin(a2), 0.0f);
+                            d1 = radius * d1;
+                            d2 = radius * d2;
+
+                            v2 = v1 + ax * (dir.z / 2.0f - r);
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
+                                glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
+                                glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                            }
+                            v1 = v2;
+                            for (int l = 0; l < res2; l++) {
+                                v2 = v1 + R * ax * r1;
+                                glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                                ax = R * ax;
+                                for (int m = 0; m < res; m++) {
+                                    d3 = R * d1;
+                                    d4 = R * d2;
+                                    glm::vec3 norm(glm::cross(d2 - d1, ax));
+                                    v.push_back(v1 + d1);
+                                    v.push_back(v1 + d2);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d4);
+                                    v.push_back(v1 + d2);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    d1 = R1 * d1;
+                                    d2 = R1 * d2;
+                                }
+                                d1 = d3;
+                                d2 = d4;
+                                v1 = v2;
+                            }
+                            R = rotationMatrix(rotAx, a1);
+                            v2 += ax * (glm::length(dir2) - 2.0f * r);
+                            glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                            for (int m = 0; m < res; m++) {
+                                glm::vec3 norm(glm::cross(d2 - d1, ax));
+                                v.push_back(v1 + d1);
+                                v.push_back(v1 + d2);
+                                v.push_back(v2 + d1);
+                                v.push_back(v2 + d1);
+                                v.push_back(v2 + d2);
+                                v.push_back(v1 + d2);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                d1 = R1 * d1;
+                                d2 = R1 * d2;
+                            }
+                            v1 = v2;
+                            for (int l = 0; l < res2; l++) {
+                                v2 = v1 + R * ax * r1;
+                                glm::mat3x3 R1 = rotationMatrix(ax, a2);
+                                ax = R * ax;
+                                for (int m = 0; m < res; m++) {
+                                    d3 = R * d1;
+                                    d4 = R * d2;
+                                    glm::vec3 norm(glm::cross(d2 - d1, ax));
+                                    v.push_back(v1 + d1);
+                                    v.push_back(v1 + d2);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d3);
+                                    v.push_back(v2 + d4);
+                                    v.push_back(v1 + d2);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    n.push_back(norm);
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                    d1 = R1 * d1;
+                                    d2 = R1 * d2;
+                                }
+                                d1 = d3;
+                                d2 = d4;
+                                v1 = v2;
+                            }
+                            v2 = nodes[i][j][k].e3[0];
+                            for (int l = 0; l < res; l++) {
+                                float a1 = l * 2.0f * PI / res;
+                                float a2 = (l + 1) * 2.0f * PI / res;
+                                glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
+                                glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
+                                glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                n.push_back(norm);
+                                v.push_back(v1 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v2 + radius * d1);
+                                v.push_back(v1 + radius * d2);
+                                v.push_back(v2 + radius * d2);
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                                c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                            }
+                        }
+                    }
+                    else {
+                        v1 = nodes[i][j][k].e3[0];
+                        for (int l = 0; l < res; l++) {
+                            float a1 = l * 2.0f * PI / res;
+                            float a2 = (l + 1) * 2.0f * PI / res;
+                            glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
+                            glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
+                            glm::vec3 norm(0.0f, 0.0f, -1.0f);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            v.push_back(v1 + radius * d1);
+                            v.push_back(v1 + radius * d2);
+                            v.push_back(v1);
+                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                        }
+                    }
+                    if (k == (dims[2] - 1)) {
+                        v1 = nodes[i][j][k].e3[1];
+                        for (int l = 0; l < res; l++) {
+                            float a1 = l * 2.0f * PI / res;
+                            float a2 = (l + 1) * 2.0f * PI / res;
+                            glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
+                            glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
+                            glm::vec3 norm(0.0f, 0.0f, 1.0f);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            n.push_back(norm);
+                            v.push_back(v1 + radius * d1);
+                            v.push_back(v1 + radius * d2);
+                            v.push_back(v1);
+                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                            c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+                        }
+                    }
+
+                    v1 = nodes[i][j][k].e3[0];
+                    v2 = nodes[i][j][k].e3[1];
                     for (int l = 0; l < res; l++) {
                         float a1 = l * 2.0f * PI / res;
                         float a2 = (l + 1) * 2.0f * PI / res;
@@ -1093,90 +1208,6 @@ void generateStructureDataExp(Node***& nodes, int dims[3], std::vector<glm::vec3
                         c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
                         c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
                     }
-                }*/
-                v1 = nodes[i][j][k].e1[0];
-                v2 = nodes[i][j][k].e1[1];
-                for (int l = 0; l < res; l++) {
-                    float a1 = l * 2.0f * PI / res;
-                    float a2 = (l + 1) * 2.0f * PI / res;
-                    glm::vec3 d1(0.0f, glm::cos(a1), glm::sin(a1));
-                    glm::vec3 d2(0.0f, glm::cos(a2), glm::sin(a2));
-                    glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    v.push_back(v1 + radius * d1);
-                    v.push_back(v1 + radius * d2);
-                    v.push_back(v2 + radius * d1);
-                    v.push_back(v2 + radius * d1);
-                    v.push_back(v1 + radius * d2);
-                    v.push_back(v2 + radius * d2);
-                    c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                    c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                    c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                    c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                    c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                    c.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-                }
-                
-                v1 = nodes[i][j][k].e2[0];
-                v2 = nodes[i][j][k].e2[1];
-                for (int l = 0; l < res; l++) {
-                    float a1 = l * 2.0f * PI / res;
-                    float a2 = (l + 1) * 2.0f * PI / res;
-                    glm::vec3 d1(glm::cos(a1), 0.0f, glm::sin(a1));
-                    glm::vec3 d2(glm::cos(a2), 0.0f, glm::sin(a2));
-                    glm::vec3 normal = glm::normalize(glm::cross(v1 - v2, d2-d1));
-                    glm::vec3 norm(glm::cross(v1 - v2, d1 - d2));
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    v.push_back(v1 + radius * d1);
-                    v.push_back(v1 + radius * d2);
-                    v.push_back(v2 + radius * d1);
-                    v.push_back(v2 + radius * d1);
-                    v.push_back(v1 + radius * d2);
-                    v.push_back(v2 + radius * d2);
-                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                    c.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-                }
-                
-                v1 = nodes[i][j][k].e3[0];
-                v2 = nodes[i][j][k].e3[1];
-                for (int l = 0; l < res; l++) {
-                    float a1 = l * 2.0f * PI / res;
-                    float a2 = (l + 1) * 2.0f * PI / res;
-                    glm::vec3 d1(glm::cos(a1), glm::sin(a1), 0.0f);
-                    glm::vec3 d2(glm::cos(a2), glm::sin(a2), 0.0f);
-                    glm::vec3 norm(glm::cross(v1 - v2, d2 - d1));
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    n.push_back(norm);
-                    v.push_back(v1 + radius * d1);
-                    v.push_back(v1 + radius * d2);
-                    v.push_back(v2 + radius * d1);
-                    v.push_back(v2 + radius * d1);
-                    v.push_back(v1 + radius * d2);
-                    v.push_back(v2 + radius * d2);
-                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-                    c.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
                 }
             }
         }
@@ -1262,7 +1293,8 @@ int main() {
     std::vector<glm::vec3> v;
     std::vector<glm::vec3> c;
     std::vector<glm::vec3> n;
-    generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+    int axis = 7;
+    generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
     unsigned int vao, vbo_pos, vbo_col, vbo_norm;
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo_pos);
@@ -1380,7 +1412,6 @@ int main() {
     glm::vec3 lightPos = { 10.0f,10.f,10.f };
     bool xz = true, yz = true, xy = true, abc = false, x = true, y = true, z = true, ax = true, grid = true;
     int config = 7, gridSize = 8;
-    int axis = 7;
     int ABC[3] = { 1,1,1 };
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -1470,14 +1501,14 @@ int main() {
                 generateRandomStructure(allNodes, dims, space, config);
             else
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
         if (ImGui::DragFloat("Space", &space, 0.1f, 0.01f, 100.0f)) {
             updateStructure(allNodes, dims, space);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
@@ -1488,7 +1519,7 @@ int main() {
                 generateRandomStructure(allNodes, dims, space, config);
             else
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
@@ -1499,7 +1530,7 @@ int main() {
                 generateRandomStructure(allNodes, dims, space, config);
             else
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
@@ -1510,7 +1541,7 @@ int main() {
                 generateRandomStructure(allNodes, dims, space, config);
             else
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
@@ -1521,7 +1552,7 @@ int main() {
             xz = true;
             config = xy * 1 + yz * 2 + xz * 4;
             generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
@@ -1533,7 +1564,7 @@ int main() {
                 if (ABC[1] == 0)
                     ABC[1] = 1;
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-                generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+                generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
                 updateBufferData(vbo_pos, v);
                 updateBufferData(vbo_col, c);
                 updateBufferData(vbo_norm, n);
@@ -1542,61 +1573,49 @@ int main() {
         
         if (ImGui::Checkbox("X Strands", &x)) {
             axis = x * 1 + y * 2 + z * 4;
-            if (!abc)
-                generateRandomStructure(allNodes, dims, space, config);
-            else
-                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
         if (ImGui::Checkbox("Y Strands", &y)) {
             axis = x * 1 + y * 2 + z * 4;
-            if (!abc)
-                generateRandomStructure(allNodes, dims, space, config);
-            else
-                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
         if (ImGui::Checkbox("Z Strands", &z)) {
             axis = x * 1 + y * 2 + z * 4;
-            if (!abc)
-                generateRandomStructure(allNodes, dims, space, config);
-            else
-                generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
         if (ImGui::DragFloat("Radius", &radius, 0.01f)) {
             updateStructure(allNodes, dims, space);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
         if (ImGui::DragInt("Pipe Res", &res, 0.1f, 2)) {
             updateStructure(allNodes, dims, space);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
-        if (ImGui::DragFloat("Corner Radius", &rad2, 0.1f, 0.01f)) {
+        if (ImGui::DragFloat("Corner Radius", &rad2, 0.05f, 0.01f, space/4.0f)) {
             updateStructure(allNodes, dims, space);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
-        if (ImGui::DragInt("Corner Res", &res1, 0.1f, 1)) {
+        if (ImGui::DragInt("Corner Res", &res1, 0.1f, 2)) {
             updateStructure(allNodes, dims, space);
-            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);

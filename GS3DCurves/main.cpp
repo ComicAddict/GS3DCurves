@@ -181,6 +181,47 @@ void abcStructure(Node***& nodes, int dims[3], int config, int a, int b, int c) 
     }
 }
 
+
+void incStructure(Node***& nodes, int dims[3], int config) {
+    bool xy = 1;// config& (1 << 0);
+    bool yz = 1;//config & (1 << 1);
+    bool xz = 1;//config & (1 << 2);
+    printf("configs: %d, %d, %d\n", xy, yz, xz);
+    nodes[0][0][0].config = config;
+    for (int i = 0; i < dims[0]; i++) {
+        if (i != 0)
+            nodes[i][0][0].config = nodes[i - 1][0][0].config ^ (1 << 0);
+        for (int j = 0; j < dims[1]; j++) {
+            if (j != 0)
+                nodes[i][j][0].config = nodes[i][j - 1][0].config ^ (1 << 1);
+            for (int k = 0; k < dims[2]; k++) {
+                if (k != 0)
+                    nodes[i][j][k].config = nodes[i][j][k - 1].config ^ (1 << 2);
+            }
+        }
+    }
+}
+
+void inc2Structure(Node***& nodes, int dims[3], int config) {
+    bool xy = 1;// config& (1 << 0);
+    bool yz = 1;//config & (1 << 1);
+    bool xz = 1;//config & (1 << 2);
+    printf("configs: %d, %d, %d\n", xy, yz, xz);
+    nodes[0][0][0].config = config;
+    for (int i = 0; i < dims[0]; i++) {
+        if (i != 0)
+            nodes[i][0][0].config = (nodes[i - 1][0][0].config + 1) % 8;
+        for (int j = 0; j < dims[1]; j++) {
+            if (j != 0)
+                nodes[i][j][0].config = (nodes[i][j - 1][0].config + 1) % 8;
+            for (int k = 0; k < dims[2]; k++) {
+                if (k != 0)
+                    nodes[i][j][k].config = (nodes[i][j][k - 1].config + 1) % 8;
+            }
+        }
+    }
+}
+
 void randomizeStructure(Node***& nodes, int dims[3]) {
     for (int i = 0; i < dims[0]; i++) {
         for (int j = 0; j < dims[1]; j++) {
@@ -269,6 +310,25 @@ void generateABCStructure(Node***& nodes, int dims[3], float space, int config, 
     }
     initStructure(nodes, dims);
     abcStructure(nodes, dims, config, a, b, c);
+    updateStructure(nodes, dims, space);
+}
+
+void generateIncStructure(Node***& nodes, int dims[3], float space, int config) {
+    if (nodes != nullptr) {
+        deleteStructure(nodes, dims);
+    }
+    initStructure(nodes, dims);
+    incStructure(nodes, dims, config);
+    updateStructure(nodes, dims, space);
+}
+
+
+void generateInc2Structure(Node***& nodes, int dims[3], float space, int config) {
+    if (nodes != nullptr) {
+        deleteStructure(nodes, dims);
+    }
+    initStructure(nodes, dims);
+    inc2Structure(nodes, dims, config);
     updateStructure(nodes, dims, space);
 }
 
@@ -1410,7 +1470,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     float orthoScale = 10.0f;
     glm::vec3 lightPos = { 10.0f,10.f,10.f };
-    bool xz = true, yz = true, xy = true, abc = false, x = true, y = true, z = true, ax = true, grid = true;
+    bool xz = true, yz = true, xy = true, abc = false, x = true, y = true, z = true, ax = true, grid = true, inc = false, inc2 = false;
     int config = 7, gridSize = 8;
     int ABC[3] = { 1,1,1 };
 
@@ -1497,10 +1557,16 @@ int main() {
             lightPos[0] = dims[0] * 10.0f;
             lightPos[1] = dims[1] * 10.0f;
             lightPos[2] = dims[2] * 10.0f;
-            if(!abc)
-                generateRandomStructure(allNodes, dims, space, config);
-            else
+
+            if (abc)
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            else if (inc)
+                generateIncStructure(allNodes, dims, space, config);
+            else if (inc2)
+                generateInc2Structure(allNodes, dims, space, config);
+            else
+                generateRandomStructure(allNodes, dims, space, config);
+
             generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
@@ -1515,10 +1581,15 @@ int main() {
         }
         if (ImGui::Checkbox("Enable XY Mirror", &xy)) {
             config = xy * 1 + yz * 2 + xz * 4;
-            if (!abc)
-                generateRandomStructure(allNodes, dims, space, config);
-            else
+            if (abc)
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            else if(inc)
+                generateIncStructure(allNodes, dims, space, config);
+            else if (inc2)
+                generateInc2Structure(allNodes, dims, space, config);
+            else
+                generateRandomStructure(allNodes, dims, space, config);
+
             generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
@@ -1526,10 +1597,15 @@ int main() {
         }
         if (ImGui::Checkbox("Enable XZ Mirror", &xz) ) {
             config = xy * 1 + yz * 2 + xz * 4;
-            if (!abc)
-                generateRandomStructure(allNodes, dims, space, config);
-            else
+            if (abc)
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            else if (inc)
+                generateIncStructure(allNodes, dims, space, config);
+            else if (inc2)
+                generateInc2Structure(allNodes, dims, space, config);
+            else
+                generateRandomStructure(allNodes, dims, space, config);
+
             generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
@@ -1537,20 +1613,23 @@ int main() {
         }
         if (ImGui::Checkbox("Enable YZ Mirror", &yz)) {
             config = xy * 1 + yz * 2 + xz * 4;
-            if (!abc)
-                generateRandomStructure(allNodes, dims, space, config);
-            else
+            if (abc)
                 generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
+            else if (inc)
+                generateIncStructure(allNodes, dims, space, config);
+            else if (inc2)
+                generateInc2Structure(allNodes, dims, space, config);
+            else
+                generateRandomStructure(allNodes, dims, space, config);
+
             generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
             updateBufferData(vbo_col, c);
             updateBufferData(vbo_norm, n);
         }
         if (ImGui::Checkbox("ABC", &abc)) {
-            xy = true;
-            yz = true;
-            xz = true;
-            config = xy * 1 + yz * 2 + xz * 4;
+            inc = false;
+            inc2 = false;
             generateABCStructure(allNodes, dims, space, config, ABC[0], ABC[1], ABC[2]);
             generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
             updateBufferData(vbo_pos, v);
@@ -1569,6 +1648,24 @@ int main() {
                 updateBufferData(vbo_col, c);
                 updateBufferData(vbo_norm, n);
             }
+        }
+        if (ImGui::Checkbox("Inc", &inc)) {
+            abc = false;
+            inc2 = false;
+            generateIncStructure(allNodes, dims, space, config);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
+            updateBufferData(vbo_norm, n);
+        }
+        if (ImGui::Checkbox("Inc2", &inc2)) {
+            abc = false;
+            inc = false;
+            generateInc2Structure(allNodes, dims, space, config);
+            generateStructureDataExp(allNodes, dims, v, c, n, radius, res, rad2, res1, axis);
+            updateBufferData(vbo_pos, v);
+            updateBufferData(vbo_col, c);
+            updateBufferData(vbo_norm, n);
         }
         
         if (ImGui::Checkbox("X Strands", &x)) {
